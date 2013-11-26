@@ -47,7 +47,7 @@ Point origin;
 Mat frame;
 Rect selectRect;
 vector<Rect> selection;
-
+#pragma region MouseEvent
 static void onMouse( int event, int x, int y, int, void * )
 {
     if( selectObject )
@@ -76,6 +76,7 @@ static void onMouse( int event, int x, int y, int, void * )
         break;
     }
 }
+#pragma endregion
 #define CV_CVX_WHITE    CV_RGB(0xff,0xff,0xff)
 #define CV_CVX_BLACK    CV_RGB(0x00,0x00,0x00)
 
