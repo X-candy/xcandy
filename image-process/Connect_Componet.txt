@@ -1,0 +1,76 @@
+
+void mergeConnectComponet(Mat _src ,Mat &_mask,float _perimScale)
+{
+	if(_src.empty())
+		return ;
+
+
+	if (_mask.empty())
+	{
+		_mask = Mat(_src.rows,_src.cols,CV_8UC1);
+	}
+
+	Mat tempMat;
+	_src.copyTo(tempMat);
+
+	vector<vector<Point> > contours0;
+	vector<Vec4i> hierarchy;
+
+	findContours( tempMat, contours0, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+
+	vector<int> hull;
+	vector<vector<Point>> contours;
+	double q = (tempMat.rows + tempMat.cols) / _perimScale;
+
+	int count =0;
+	for(int k=0;k<contours0.size();k++)
+	{
+		double len = arcLength(contours0[k],1);
+		if(len<q)
+			contours0[k].clear();
+		else
+		{
+			convexHull(contours0[k], hull, true);
+
+			vector<Point> temp;
+			for(int i=0;i<hull.size();i++)
+			{
+				Point point=contours0[k].at(hull[i]);
+				temp.push_back(point);
+			}
+			contours.push_back(temp);
+			count++;
+		}
+	}
+
+	for( int idx = 0; idx <contours.size();idx++)
+	{
+		drawContours( _mask, contours, idx, CV_CVX_WHITE, CV_FILLED);
+	}
+}
+
+void getConnectComponet(Mat _src,int &_num, vector<Rect> &_bounding_box, vector<Point> &_contour_centers)
+{
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	Mat masktemp;
+	_src.copyTo(masktemp);
+	findContours( masktemp, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+
+	_num = contours.size();
+	for(int i=0;i<contours.size();i++)
+	{
+		masktemp.setTo(0);
+		drawContours( masktemp, contours, i, CV_CVX_WHITE, CV_FILLED);
+		Moments m=moments(masktemp);
+		if(m.m00 == 0)
+			continue;
+		Point center;
+		center.x =(int)m.m10/(m.m00+0.00000000001);
+		center.y =(int)m.m01/(m.m00+0.00000000001);
+		_contour_centers.push_back(center);
+
+		Rect bounding_box=boundingRect(contours[i]);
+		_bounding_box.push_back(bounding_box);
+	}
+}
