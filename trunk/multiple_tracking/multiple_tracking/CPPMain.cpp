@@ -6,7 +6,7 @@
 int main(int argc,char** argv)
 {
 	VideoCapture _capture;
-	_capture.open("G:\\银行环境\\右下.avi");
+	_capture.open("D:\\ABC.avi");
 	Mat frame;
 	if(!_capture.isOpened())
 		return -1;
@@ -99,11 +99,7 @@ int main(int argc,char** argv)
 	char dataset_name[20]="slalom";
 	
 	char file_path[255];
-<<<<<<< .mine
 	sprintf_s(file_path,"f:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
-=======
-	sprintf_s(file_path,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
->>>>>>> .r16
 	vector<DETECTRECT> detect_rect;
 	read_dataset(file_path, dataset_info);
 	ProcessDataSet(detect_rect,dataset_info);
@@ -114,11 +110,7 @@ int main(int argc,char** argv)
 	char file_name[255]={0};
 	for(int i=0;i<detect_rect.size();i++)
 	{		
-<<<<<<< .mine
 		sprintf_s(file_name,"f:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
-=======
-		sprintf_s(file_name,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
->>>>>>> .r16
 		frame =imread(file_name);
 		for(int k=0;k<detect_rect[i].detect_rect.size();k++)
 		{
