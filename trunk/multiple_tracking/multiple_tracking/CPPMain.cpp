@@ -11,11 +11,20 @@ int main(int argc,char** argv)
 	if(!_capture.isOpened())
 		return -1;
 
-	char fData[2][3]={1,4,
-		4,1,
-		2,4};
+	/*char fData[2][3]={1,4,
+	4,1,
+	2,4};
 
 	Mat abc = Mat(2,3,CV_8UC1,fData);
+	cout<<"abc:"<<abc<<endl;
+	Mat T = Mat(2,3,CV_8UC1);
+	T.setTo(0);
+	cout<<"T:"<<T<<endl;
+	Mat A=abc.colRange(2,3);
+	Mat Bc= T.colRange(2,3);
+
+	A.copyTo(Bc);
+	cout<<"T:"<<T<<endl;*/
 	//for(int c=0;c<abc.channels();c++)
 	//{
 	//	for(int i=0;i<abc.rows;i++)
@@ -90,15 +99,26 @@ int main(int argc,char** argv)
 	char dataset_name[20]="slalom";
 	
 	char file_path[255];
+<<<<<<< .mine
+	sprintf_s(file_path,"f:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
+=======
 	sprintf_s(file_path,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
+>>>>>>> .r16
 	vector<DETECTRECT> detect_rect;
 	read_dataset(file_path, dataset_info);
 	ProcessDataSet(detect_rect,dataset_info);
-	findAssociations(detect_rect,3);
+	vector<Mat> B;
+	vector<Mat> distanceSQ;
+	findAssociations(detect_rect,3,B,distanceSQ);
+	linkDetectionTracklets(detect_rect,B,distanceSQ);
 	char file_name[255]={0};
 	for(int i=0;i<detect_rect.size();i++)
 	{		
+<<<<<<< .mine
+		sprintf_s(file_name,"f:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
+=======
 		sprintf_s(file_name,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
+>>>>>>> .r16
 		frame =imread(file_name);
 		for(int k=0;k<detect_rect[i].detect_rect.size();k++)
 		{
