@@ -1,4 +1,5 @@
 #include "function.h"
+int frame=0;
 int read_dataset(char* _file_path,vector<DATASET> &_dataset)
 {
 	FILE* fp;
@@ -125,6 +126,8 @@ void nonunique(Mat _a,Mat &_b)
 	if(numelA == 1)
 	{
 		_a.copyTo(_b);
+		_b.convertTo(_b,CV_32F);
+		_b = _b-1;
 		return;
 	}
 	//cout<<_b<<endl;
@@ -204,15 +207,19 @@ void nonunique(Mat _a,Mat &_b)
 		}
 		tempA.copyTo(_b);
 	}
-	
+	_b = _b - 1;
 }
 
+<<<<<<< .mine
+
+int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance)
+=======
 int frame=0;
 int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
+>>>>>>> .r16
 {
 	int length= _detect_rect.size();
-	vector<Mat> B;
-	vector<Mat> distance;
+
 	Mat ratio;
 	Mat f;
 	double lastminD2=0;
@@ -240,7 +247,8 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 					mat_distance.at<float>(NT_i,NT_ip1) = sqrt(mat_distance.at<float>(NT_i,NT_ip1));
 				}
 			}
-			distance.push_back(mat_distance);
+			_distance.push_back(mat_distance);
+			
 			
 			//检测前两位距离比值
 			Mat Dsorted;
@@ -285,24 +293,96 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 			A.convertTo(A,CV_8UC1);
 			Mat tempmat=A.mul(f/255);
 			Mat rlt;
+<<<<<<< .mine
+			cout<<"tempmat="<<tempmat<<endl;
+			
+			//检测重复的idx
+=======
 			cout<<"tempmat="<<tempmat<<endl;
 			//检测重复的idx
+>>>>>>> .r16
 			nonunique(tempmat,rlt);
+<<<<<<< .mine
+			cout<<"rlt=\t"<<rlt<<endl;
+			_b.push_back(rlt);
+=======
 			cout<<"rlt=\t"<<rlt<<endl;
 			B.push_back(rlt);
+>>>>>>> .r16
 		}	
 	}
 
+<<<<<<< .mine
+	int N_tp1 = _detect_rect[length-1].detect_rect.size();
+	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
+	tempmat.setTo(-1);
+	cout<<tempmat<<endl;
+	_b.push_back(tempmat);
+
+=======
 	int N_tp1 = _detect_rect[length-1].detect_rect.size();
 	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
 	tempmat.setTo(0);
 	cout<<tempmat<<endl;
 	B.push_back(tempmat);
 
+>>>>>>> .r16
+	return 1;
+}
+
+int getxychain(vector<DETECTRECT> &_detect_rect,vector<Mat> &_b,int _frame,int _ind,Mat &_xy)
+{
+	int length= _detect_rect.size();
+	int tfirst = _frame;
+	Mat xy = Mat(2,length,CV_32FC1);
+	xy.setTo(0);
+
+	while(_frame<length && _ind>=0)
+	{
+		Mat tempXYt=xy.colRange(_frame,_frame+1);
+		tempXYt.at<float>(0,0)=_detect_rect[_frame].detect_rect[_ind].center_point[0];
+		tempXYt.at<float>(1,0)=_detect_rect[_frame].detect_rect[_ind].center_point[1];
+		int indnext =(int) _b[_frame].at<float>(0,_ind);
+		_b[_frame].at<float>(0,_ind) = -2;
+		_ind = indnext;
+		_frame++;
+	}
+	_xy = xy.colRange(tfirst,_frame);
+	cout<<_xy<<endl;
 	return 1;
 }
 
 
 
+int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vector<Mat> _distance)
+{
+	cout<<"*********************linkDetectionTracklets*******************"<<endl;
+
+	int length= _detect_rect.size();
+	int n=1;
+	int cols;
+	int rows;
+	Mat xy=Mat();
+	for(int i=0;i<length;i++)
+	{
+		cols =_b[i].cols;
+		cout<<"_b["<<i<<"]="<<_b[i]<<endl;
+		for(int k=0;k<cols;k++)
+		{
+			if(_b[i].at<float>(0,k)>-2)
+			{
+				getxychain(_detect_rect,_b,i,k,xy);
+
+			}
+		}
+	}
+
+	return 1;
+}
 
 
+int growitl(vector<Mat> &_itl,int max_D)
+{
+
+	return 1;
+}
