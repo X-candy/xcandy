@@ -50,16 +50,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-<<<<<<< .mine
       <AdditionalIncludeDirectories>d:\opencv\include</AdditionalIncludeDirectories>
-=======
-      <AdditionalIncludeDirectories>f:\opencv\include</AdditionalIncludeDirectories>
->>>>>>> .r16
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\opencv\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\opencv\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
