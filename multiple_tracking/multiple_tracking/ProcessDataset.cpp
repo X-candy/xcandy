@@ -70,7 +70,7 @@ int ProcessDataSet(vector<DETECTRECT> &_detect_rect,vector<DATASET> &_dataset)
 			{
 				if(_dataset[k].omega[i-_dataset[k].t_start])
 				{
-					_detect_rect[i].idx.push_back(k);
+					_detect_rect[i].idx.push_back(_dataset[k].id);
 					_detect_rect[i].detect_rect.push_back(_dataset[k].rect[i-_dataset[k].t_start]);
 				}
 				else
@@ -87,12 +87,10 @@ int ProcessDataSet(vector<DETECTRECT> &_detect_rect,vector<DATASET> &_dataset)
 	return 1;
 }
 
-
 int initial_track(char* _dataset_name)
 {
 	return 1;
 }
-
 
 void DiffMat(Mat _a,Mat &_b)  //求向量B的一阶差分 功能等价matlab里的diff
 {
@@ -113,13 +111,11 @@ void DiffMat(Mat _a,Mat &_b)  //求向量B的一阶差分 功能等价matlab里的diff
 		pOut++;
 	}
 }
-int frame=0;
+
 void nonunique(Mat _a,Mat &_b)
 {
-	
 	if(_a.empty())
 		return;
-
 	int rows = _a.rows;
 	int cols = _a.cols;
 
@@ -152,7 +148,6 @@ void nonunique(Mat _a,Mat &_b)
 	int nNonZero=countNonZero(d);
 	
 	Mat tempB=Mat(1,nNonZero,CV_32F);
-	
 
 	int k=0;
 	for(int i=0;i<rows*cols;i++)
@@ -167,16 +162,12 @@ void nonunique(Mat _a,Mat &_b)
 		}
 	}
 
-	cout<<"**************************"<<endl<<sorted<<endl;
-	cout<<tempB<<endl;
-
 	if(nNonZero ==1 && numelA >1)
+	{
 		tempB.copyTo(_b);
+	}
 	else
 	{
-
-		if(frame==71)
-			int kkkl=0;
 		vector<int> nhistCount(nNonZero);
 		
 		for(int k=0;k<numelA;k++)
@@ -187,18 +178,36 @@ void nonunique(Mat _a,Mat &_b)
 					nhistCount[i]++;
 			}
 		}
+		
+		vector<float> tempVectorB;
 		for(int k=0;k<nNonZero;k++)
 		{
 			if(nhistCount[k]>1)
 			{
-
+				tempVectorB.push_back(tempB.at<float>(0,k));
 			}
 		}
-		/*cout<<nhistCount<<endl;*/
+
+		if(tempVectorB.size() != 0)
+		{
+			for(int k=0;k<tempVectorB.size();k++)
+			{
+				if(tempVectorB[k] > 0)
+				{
+					for(int j=0;j<numelA;j++)
+					{
+						if(tempA.at<float>(0,j) == tempVectorB[k] )
+							tempA.at<float>(0,j) = 0;
+					}
+				}
+			}
+		}
+		tempA.copyTo(_b);
 	}
 	
 }
 
+int frame=0;
 int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 {
 	int length= _detect_rect.size();
@@ -209,8 +218,9 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 	double lastminD2=0;
 	for(int T=0;T<length-1;T++)
 	{
+		cout<<"**************************"<<endl;
 		frame++;
-		cout<<frame<<endl;
+		cout<<"frame="<<frame<<endl;
 		//t时刻的检测框数量
 		int N_t=_detect_rect[T].detect_rect.size();
 		//t+1时刻的检测框数量
@@ -231,11 +241,13 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 				}
 			}
 			distance.push_back(mat_distance);
+			
 			//检测前两位距离比值
 			Mat Dsorted;
 			cv::sort(mat_distance,Dsorted,CV_SORT_EVERY_ROW + CV_SORT_ASCENDING );
 			Mat DIdx;
 			cv::sortIdx(mat_distance,DIdx,CV_SORT_EVERY_ROW + CV_SORT_ASCENDING );
+			DIdx = DIdx+1;
 
 			if(N_tp1>1)
 			{
@@ -244,7 +256,11 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 				Mat C;
 				divide(B,A,ratio);
 				f=ratio>_ratio_threhold;
-					
+				for(int i=0;i<A.rows;i++)
+				{
+					if(A.at<float>(i,0)==0)
+						f.at<uchar>(i,0) = 255;
+				}
 				minMaxLoc(Dsorted,NULL,&lastminD2,NULL,NULL);    // 不需要的置为0 
 			}
 			else if(lastminD2>0)
@@ -252,6 +268,11 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 				Mat A=Dsorted.colRange(0,1);
 				divide(lastminD2,A,ratio);
 				f=ratio>_ratio_threhold;
+				for(int i=0;i<A.rows;i++)
+				{
+					if(A.at<float>(i,0)==0)
+						f.at<uchar>(i,0) = 255;
+				}
 			}
 			else
 			{
@@ -262,16 +283,21 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 
 			Mat A=DIdx.colRange(0,1);
 			A.convertTo(A,CV_8UC1);
-			
 			Mat tempmat=A.mul(f/255);
-			B.push_back(tempmat);
-
 			Mat rlt;
-			nonunique(tempmat,rlt);
+			cout<<"tempmat="<<tempmat<<endl;
 			//检测重复的idx
-	/*		nonunique(tempmat);*/
+			nonunique(tempmat,rlt);
+			cout<<"rlt=\t"<<rlt<<endl;
+			B.push_back(rlt);
 		}	
 	}
+
+	int N_tp1 = _detect_rect[length-1].detect_rect.size();
+	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
+	tempmat.setTo(0);
+	cout<<tempmat<<endl;
+	B.push_back(tempmat);
 
 	return 1;
 }

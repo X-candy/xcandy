@@ -6,7 +6,7 @@
 int main(int argc,char** argv)
 {
 	VideoCapture _capture;
-	_capture.open("d:\\abc.avi");
+	_capture.open("G:\\银行环境\\右下.avi");
 	Mat frame;
 	if(!_capture.isOpened())
 		return -1;
@@ -90,7 +90,7 @@ int main(int argc,char** argv)
 	char dataset_name[20]="slalom";
 	
 	char file_path[255];
-	sprintf_s(file_path,"F:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
+	sprintf_s(file_path,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\%s.itl",dataset_name,dataset_name);
 	vector<DETECTRECT> detect_rect;
 	read_dataset(file_path, dataset_info);
 	ProcessDataSet(detect_rect,dataset_info);
@@ -98,7 +98,7 @@ int main(int argc,char** argv)
 	char file_name[255]={0};
 	for(int i=0;i<detect_rect.size();i++)
 	{		
-		sprintf_s(file_name,"F:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
+		sprintf_s(file_name,"d:\\smot\\cdicle-smot-7ce1e201cf2d\\smot_data\\%s\\img\\img%05d.jpg",dataset_name,i+1);
 		frame =imread(file_name);
 		for(int k=0;k<detect_rect[i].detect_rect.size();k++)
 		{
@@ -112,12 +112,12 @@ int main(int argc,char** argv)
 		imshow("frame",frame);
 		waitKey(20);
 	}
-	//while(1)
-	//{
-	//	_capture>>frame;
-	//	if(frame.empty())                                                                                             
-	//		break;
-	//	cv::imshow("frame",frame);
-	//	cv::waitKey(20)
-
+	while(1)
+	{
+		_capture>>frame;
+		if(frame.empty())                                                                                             
+			break;
+		cv::imshow("frame",frame);
+		cv::waitKey(20);
+	}
 }
