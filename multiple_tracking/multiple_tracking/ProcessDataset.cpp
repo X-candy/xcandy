@@ -210,13 +210,8 @@ void nonunique(Mat _a,Mat &_b)
 	_b = _b - 1;
 }
 
-<<<<<<< .mine
 
 int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance)
-=======
-int frame=0;
-int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
->>>>>>> .r16
 {
 	int length= _detect_rect.size();
 
@@ -293,40 +288,21 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold = 3 )
 			A.convertTo(A,CV_8UC1);
 			Mat tempmat=A.mul(f/255);
 			Mat rlt;
-<<<<<<< .mine
 			cout<<"tempmat="<<tempmat<<endl;
 			
 			//检测重复的idx
-=======
-			cout<<"tempmat="<<tempmat<<endl;
-			//检测重复的idx
->>>>>>> .r16
 			nonunique(tempmat,rlt);
-<<<<<<< .mine
 			cout<<"rlt=\t"<<rlt<<endl;
 			_b.push_back(rlt);
-=======
-			cout<<"rlt=\t"<<rlt<<endl;
-			B.push_back(rlt);
->>>>>>> .r16
 		}	
 	}
 
-<<<<<<< .mine
 	int N_tp1 = _detect_rect[length-1].detect_rect.size();
 	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
 	tempmat.setTo(-1);
 	cout<<tempmat<<endl;
 	_b.push_back(tempmat);
 
-=======
-	int N_tp1 = _detect_rect[length-1].detect_rect.size();
-	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
-	tempmat.setTo(0);
-	cout<<tempmat<<endl;
-	B.push_back(tempmat);
-
->>>>>>> .r16
 	return 1;
 }
 
