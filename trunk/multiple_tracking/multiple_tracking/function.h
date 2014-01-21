@@ -51,6 +51,7 @@ struct DETECTRECT
 
 struct I_TRACK_LINK
 {
+	int id;
 	int t_start;
 	int t_end;
 	int length;
@@ -58,8 +59,11 @@ struct I_TRACK_LINK
 	Mat data;
 };
 
+
+
+
 int read_dataset(char* _file_path,vector<DATASET> &_dataset);
 int ProcessDataSet(vector<DETECTRECT> &_detect_rect,vector<DATASET> &_dataset);
 int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance);
-int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vector<Mat> _distance);
+int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl);
 int initial_track();
