@@ -1,4 +1,5 @@
 #include "function.h"
+#include "Params.h"
 int frame=0;
 int read_dataset(char* _file_path,vector<DATASET> &_dataset)
 {
@@ -288,11 +289,9 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector
 			A.convertTo(A,CV_8UC1);
 			Mat tempmat=A.mul(f/255);
 			Mat rlt;
-			cout<<"tempmat="<<tempmat<<endl;
-			
+
 			//检测重复的idx
 			nonunique(tempmat,rlt);
-			cout<<"rlt=\t"<<rlt<<endl;
 			_b.push_back(rlt);
 		}	
 	}
@@ -300,7 +299,7 @@ int findAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector
 	int N_tp1 = _detect_rect[length-1].detect_rect.size();
 	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
 	tempmat.setTo(-1);
-	cout<<tempmat<<endl;
+
 	_b.push_back(tempmat);
 
 	return 1;
@@ -324,13 +323,10 @@ int getxychain(vector<DETECTRECT> &_detect_rect,vector<Mat> &_b,int _frame,int _
 		_frame++;
 	}
 	_xy = xy.colRange(tfirst,_frame);
-	cout<<_xy<<endl;
 	return 1;
 }
 
-
-
-int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vector<Mat> _distance)
+int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl)
 {
 	cout<<"*********************linkDetectionTracklets*******************"<<endl;
 
@@ -342,13 +338,48 @@ int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vecto
 	for(int i=0;i<length;i++)
 	{
 		cols =_b[i].cols;
-		cout<<"_b["<<i<<"]="<<_b[i]<<endl;
 		for(int k=0;k<cols;k++)
 		{
 			if(_b[i].at<float>(0,k)>-2)
 			{
 				getxychain(_detect_rect,_b,i,k,xy);
+				I_TRACK_LINK tempITL;
+				int l=xy.cols;
+	
+				tempITL.t_start = i;
+				tempITL.t_end = i+l-1;
+				tempITL.length=l;
+				tempITL.omega=Mat(1,l,CV_32FC1);
+				tempITL.omega.setTo(1);
+				xy.copyTo(tempITL.data);
+				_itl.push_back(tempITL);
+			}
+		}
+	}
+	return 1;
+}
 
+
+int growitl(vector<I_TRACK_LINK> _itl,int max_D)
+{
+	int N_itl = _itl.size();
+	BOOL loop_done=FALSE;
+
+	int gap=0;
+	while (!loop_done)
+	{
+		for(int i=0;i<N_itl;i++)
+		{
+			for(int j=0;j<N_itl;j++)
+			{
+				gap = (_itl[j].t_start - _itl[i].t_end)-1;
+				if(gap==0)
+				{
+					if(_itl[i].length == 1 && _itl[j].length >1)
+					{
+						
+					}
+				}
 			}
 		}
 	}
@@ -356,9 +387,116 @@ int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vecto
 	return 1;
 }
 
-
-int growitl(vector<Mat> &_itl,int max_D)
+int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh)
 {
+	int N=_itl.size();
+
+	int hormin = _t_start;
+	int hormax = _t_end;
+	vector<BOOL> f(N);
+
+	for(int i=0;i<N;i++)
+	{
+		f[i] = !(_itl[i].t_start >= hormax || _itl[i].t_start <= hormin);
+		if(f[i] == 1)
+		{
+			_itlh.push_back(_itl[i]);
+			_itlh[i].id = i;
+		}
+	}
+
+
+	for(int i=0;i<_itlh.size();i++)
+	{
+		int si = max(hormin - _itlh[i].t_start,0);
+		int ei = max(_itlh[i].t_end - hormax,0);
+
+		int cols = _itlh[i].data.cols;
+		Mat tempData= _itlh[i].data.colRange(si, cols-ei);
+		tempData.copyTo(_itlh[i].data);
+		cols = _itlh[i].omega.cols;
+		Mat tempOmega=_itlh[i].omega.colRange(si,cols-ei);
+		tempOmega.copyTo(_itlh[i].omega);
+
+		_itlh[i].t_start = max(_itlh[i].t_start,hormin);
+		_itlh[i].t_end = min(_itlh[i].t_end ,hormax);
+
+		_itlh[i].length = _itlh[i].t_end - _itlh[i].t_start + 1;
+	}
 
 	return 1;
 }
+
+int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS params)
+{
+	int N=_itl.size();
+		
+	double max_gap=0;
+	int nCount=0;
+	for(int i=0;i<N;i++)
+	{
+		if(_itl[i].length>1)
+		{
+			max_gap = max_gap + _itl[i].length;
+			nCount++;
+		}
+	}
+
+	max_gap = max_gap / nCount / 2;
+
+	double max_slope = 0;
+
+	for(int i=0;i<N;i++)
+	{
+		Mat tempData1=_itl[i].data.colRange(0,_itl[i].data.end()-1);
+		Mat tempData2=_itl[i].data.colRange(1,_itl[i].data.end());
+		Mat dx;
+		cv::absdiff(tempData1,tempData2,dx);
+		Mat norm_dx = dx.mul(dx);
+		norm_dx.convertTo(norm_dx,CV_32F);
+		sqrt(norm_dx,norm_dx);
+		Mat maxMat;
+		max(norm_dx,max_slope,maxMat);
+		minMaxLoc(maxMat,NULL,&max_slope,NULL,NULL);
+	}
+	return 1;
+}
+
+
+
+
+int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
+{
+	int N=_itl.size();
+	vector<I_TRACK_LINK> itlh;
+	get_itl_horizon(_itl,_t_start,_t_end,itlh);
+	
+	//去除过短的跟踪线
+	int N_itlh = itlh.size();
+	int i=0;
+	while(i<N_itlh)
+	{
+		if(itlh[i].id<=2)
+		{
+			itlh.erase(itlh.begin()+i);
+			N_itlh--;
+			continue;
+		}
+		i++;
+	}
+
+	
+	if(!itlh.empty())
+	{
+		int dN=1;
+
+		while(dN>0)
+		{
+
+		}
+
+	}
+	
+	return 1;
+}
+
