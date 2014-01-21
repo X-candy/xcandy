@@ -106,7 +106,8 @@ int main(int argc,char** argv)
 	vector<Mat> B;
 	vector<Mat> distanceSQ;
 	findAssociations(detect_rect,3,B,distanceSQ);
-	linkDetectionTracklets(detect_rect,B,distanceSQ);
+	vector<I_TRACK_LINK> itl;
+	linkDetectionTracklets(detect_rect,B,distanceSQ,itl);
 	char file_name[255]={0};
 	for(int i=0;i<detect_rect.size();i++)
 	{		
