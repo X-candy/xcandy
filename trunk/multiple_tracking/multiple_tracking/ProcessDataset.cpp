@@ -443,7 +443,7 @@ int l2_fastalm_mo(I_TRACK_LINK _itl)
 	return 1;
 }
 
-int  hankel_mo(Mat _itl_xy,double _nr,double  _nc,Mat &_D,Mat &_H)
+int  hankel_mo(Mat _itl_xy,int _nr,int  _nc,Mat &_D,Mat &_H)
 {
 	int dim = _itl_xy.rows;
 	int N = _itl_xy.cols;
@@ -488,13 +488,28 @@ int  hankel_mo(Mat _itl_xy,double _nr,double  _nc,Mat &_D,Mat &_H)
 	ridx = ridx.t();
 	Mat tempRidx=cv::repeat(ridx,1,_nc);
 	addWeighted(tempRidx,1,tempCidx,dim,0,_H);
-	
+	_H = _H - 1;
+
 	//注意变换顺序，MATLAB和OPENCV的转换不同
 	Mat tempT = Mat();
 	tempT=_itl_xy.t();
 	tempT=tempT.reshape(0,1);
 	cout<<tempT<<endl;
 
+	Mat tempSubs=Mat();
+	tempSubs = _H.t();
+	tempSubs = tempSubs.reshape(0,1);
+	tempSubs = tempSubs -1;
+	tempSubs.convertTo(tempSubs,CV_8U);
+
+	_H = Mat::zeros(_nc,_nr,CV_32FC1);
+	cout<<_H<<endl;
+	for(int i=0;i<_nr*_nc;i++)
+	{
+		int idx = tempSubs.data[i];
+		_H.data[i] = tempT.data[idx];
+	}
+	_H=_H.t();
 	return 1;
 }
 
@@ -503,14 +518,22 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
 	int D = _itl.xy_data.rows;
 	int N = _itl.xy_data.cols;
 
-	double nr = ceil((double)N/(D+1))*D;
-	double nc = N - ceil((double)N/(D+1))+1;
+	int nr = ceil((double)N/(D+1))*D;
+	int nc = N - ceil((double)N/(D+1))+1;
 
-	double defMaxRank = MIN(nr,nc);
+	int defMaxRank = MIN(nr,nc);
 	int defMinRank = 1;
 	Mat defOmega   = Mat::ones(1,N,CV_32F);
 	double defLambda  = 0.1;
 
+	int R_max = defMaxRank;
+	R_max = MIN(R_max,nr);
+	R_max = MIN(R_max,nc);
+	int R_min = defMinRank;
+
+	Mat matH=Mat();
+	Mat matD=Mat();
+	hankel_mo(_itl.xy_data,nr,nc,matD,matH);
 	return 1;
 }
 
