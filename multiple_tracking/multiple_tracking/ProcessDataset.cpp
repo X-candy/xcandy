@@ -351,7 +351,7 @@ int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vecto
 				tempITL.length=l;
 				tempITL.omega=Mat(1,l,CV_32FC1);
 				tempITL.omega.setTo(1);
-				xy.copyTo(tempITL.data);
+				xy.copyTo(tempITL.xy_data);
 				_itl.push_back(tempITL);
 			}
 		}
@@ -411,9 +411,9 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 		int si = max(hormin - _itlh[i].t_start,0);
 		int ei = max(_itlh[i].t_end - hormax,0);
 
-		int cols = _itlh[i].data.cols;
-		Mat tempData= _itlh[i].data.colRange(si, cols-ei);
-		tempData.copyTo(_itlh[i].data);
+		int cols = _itlh[i].xy_data.cols;
+		Mat tempData= _itlh[i].xy_data.colRange(si, cols-ei);
+		tempData.copyTo(_itlh[i].xy_data);
 		cols = _itlh[i].omega.cols;
 		Mat tempOmega=_itlh[i].omega.colRange(si,cols-ei);
 		tempOmega.copyTo(_itlh[i].omega);
@@ -427,7 +427,96 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 	return 1;
 }
 
-int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS params)
+int similarity_itl(I_TRACK_LINK _itl_i,I_TRACK_LINK _itl_j,DEFAULT_PARAMS _params)
+{
+	return 1;
+}
+
+int smot_similarity(vector<I_TRACK_LINK> _itl_xy1,vector<I_TRACK_LINK> _itl_xy2,int _eta)
+{
+
+	return 1;
+}
+
+int l2_fastalm_mo(I_TRACK_LINK _itl)
+{//to be continue
+	return 1;
+}
+
+int  hankel_mo(Mat _itl_xy,double _nr,double  _nc,Mat &_D,Mat &_H)
+{
+	int dim = _itl_xy.rows;
+	int N = _itl_xy.cols;
+
+	if(_nr ==0)
+		 _nr = (N-_nc+1)*dim;
+	
+	if(_nc ==0)
+	{
+		_nr = _nc;
+		_nc = N - _nr/dim + 1; 
+
+		if((int)_nr%dim!=0)
+			printf("error\n");
+	}
+
+	int nb= (int)_nr/dim;
+	int l = MIN(nb,(int)_nc);
+	int D_length = l-1 + N-2*l+2 + l-1; 
+	
+	_D = Mat(1,D_length,CV_8U);
+	_D.setTo(l);
+	for(int i=0;i<l-1;i++)
+	{
+		_D.data[i] = i + 1;
+		_D.data[l-1 + N-2*l+2 + i ] = l-1-i;
+	}
+
+	Mat cidx = Mat(1,_nc,CV_8UC1);
+	for(int i=0;i<cidx.cols;i++)
+	{
+		cidx.data[i]=i;
+	}
+	Mat tempCidx=cv::repeat(cidx,_nr,1);
+	cout<<tempCidx<<endl;
+
+	Mat ridx = Mat(1, _nr , CV_8UC1);
+	for(int i=0;i<ridx.cols;i++)
+	{
+		ridx.data[i]=i+1;
+	}
+	ridx = ridx.t();
+	Mat tempRidx=cv::repeat(ridx,1,_nc);
+	addWeighted(tempRidx,1,tempCidx,dim,0,_H);
+	
+	//注意变换顺序，MATLAB和OPENCV的转换不同
+	Mat tempT = Mat();
+	tempT=_itl_xy.t();
+	tempT=tempT.reshape(0,1);
+	cout<<tempT<<endl;
+
+	return 1;
+}
+
+int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
+{
+	int D = _itl.xy_data.rows;
+	int N = _itl.xy_data.cols;
+
+	double nr = ceil((double)N/(D+1))*D;
+	double nc = N - ceil((double)N/(D+1))+1;
+
+	double defMaxRank = MIN(nr,nc);
+	int defMinRank = 1;
+	Mat defOmega   = Mat::ones(1,N,CV_32F);
+	double defLambda  = 0.1;
+
+	return 1;
+}
+
+
+
+int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param)
 {
 	int N=_itl.size();
 		
@@ -446,10 +535,12 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS para
 
 	double max_slope = 0;
 
+	int cols = 0;
 	for(int i=0;i<N;i++)
 	{
-		Mat tempData1=_itl[i].data.colRange(0,_itl[i].data.end()-1);
-		Mat tempData2=_itl[i].data.colRange(1,_itl[i].data.end());
+		cols = _itl[i].xy_data.cols;
+		Mat tempData1=_itl[i].xy_data.colRange(0,cols-1);
+		Mat tempData2=_itl[i].xy_data.colRange(1,cols);
 		Mat dx;
 		cv::absdiff(tempData1,tempData2,dx);
 		Mat norm_dx = dx.mul(dx);
@@ -459,11 +550,25 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS para
 		max(norm_dx,max_slope,maxMat);
 		minMaxLoc(maxMat,NULL,&max_slope,NULL,NULL);
 	}
+
+	Mat S = Mat::ones(N,N,CV_32FC1);
+	S.setTo(PINF);
+	cout<<S<<endl;
+
+	float s=0;
+	for(int i=0;i<N;i++)
+	{
+		for(int j=0;j<N;j++)
+		{
+			if( i == j)
+				s = NINF;
+			else
+				int kkk=0;
+			//to be continue;
+		}
+	}
 	return 1;
 }
-
-
-
 
 int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 {
