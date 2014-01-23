@@ -429,12 +429,14 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 
 int similarity_itl(I_TRACK_LINK _itl_i,I_TRACK_LINK _itl_j,DEFAULT_PARAMS _params)
 {
+	//to be continue
+
 	return 1;
 }
 
 int smot_similarity(vector<I_TRACK_LINK> _itl_xy1,vector<I_TRACK_LINK> _itl_xy2,int _eta)
 {
-
+	//to be continue
 	return 1;
 }
 
@@ -534,10 +536,22 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
 	Mat matH=Mat();
 	Mat matD=Mat();
 	hankel_mo(_itl.xy_data,nr,nc,matD,matH);
+
+	SVD matH_SVD(matH);
+	int nCount_matH_SVDW=matH_SVD.w.total();
+	double sum_matH_SVDW=0;
+	for(int i =0;i<nCount_matH_SVDW;i++)
+	{
+		if(matH_SVD.w.data[i]>_eta)
+		{
+			sum_matH_SVDW = matH_SVD.w.data[i] + sum_matH_SVDW;
+		}
+
+	}
+	R = MAX(R_min,R);
+	R= MIN(R_max,R);
 	return 1;
 }
-
-
 
 int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param)
 {
