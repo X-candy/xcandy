@@ -397,14 +397,15 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 
 	for(int i=0;i<N;i++)
 	{
-		f[i] = !(_itl[i].t_start >= hormax || _itl[i].t_start <= hormin);
+		f[i] = !(_itl[i].t_start >= hormax || _itl[i].t_end <= hormin);
+		cout<<f[i]<<"\t";
 		if(f[i] == 1)
 		{
 			_itlh.push_back(_itl[i]);
 			_itlh[i].id = i;
 		}
 	}
-
+	cout<<endl;
 
 	for(int i=0;i<_itlh.size();i++)
 	{
@@ -414,10 +415,11 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 		int cols = _itlh[i].xy_data.cols;
 		Mat tempData= _itlh[i].xy_data.colRange(si, cols-ei);
 		tempData.copyTo(_itlh[i].xy_data);
+		cout<<_itlh[i].xy_data<<endl;
 		cols = _itlh[i].omega.cols;
 		Mat tempOmega=_itlh[i].omega.colRange(si,cols-ei);
 		tempOmega.copyTo(_itlh[i].omega);
-
+		cout<<_itlh[i].omega<<endl;
 		_itlh[i].t_start = max(_itlh[i].t_start,hormin);
 		_itlh[i].t_end = min(_itlh[i].t_end ,hormax);
 
@@ -427,18 +429,6 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 	return 1;
 }
 
-int similarity_itl(I_TRACK_LINK _itl_i,I_TRACK_LINK _itl_j,DEFAULT_PARAMS _params)
-{
-	//to be continue
-
-	return 1;
-}
-
-int smot_similarity(vector<I_TRACK_LINK> _itl_xy1,vector<I_TRACK_LINK> _itl_xy2,int _eta)
-{
-	//to be continue
-	return 1;
-}
 
 int l2_fastalm_mo(I_TRACK_LINK _itl)
 {//to be continue
@@ -515,7 +505,7 @@ int  hankel_mo(Mat _itl_xy,int _nr,int  _nc,Mat &_D,Mat &_H)
 	return 1;
 }
 
-int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
+int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 {
 	int D = _itl.xy_data.rows;
 	int N = _itl.xy_data.cols;
@@ -525,14 +515,40 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
 
 	int defMaxRank = MIN(nr,nc);
 	int defMinRank = 1;
-	Mat defOmega   = Mat::ones(1,N,CV_32F);
 	double defLambda  = 0.1;
 
-	int R_max = defMaxRank;
+	int R_max =0;
+	if(_p.max_rank == NaN)
+		R_max = defMaxRank;
+	else
+		R_max = _p.max_rank;
 	R_max = MIN(R_max,nr);
 	R_max = MIN(R_max,nc);
-	int R_min = defMinRank;
+	
+	int R_min = 0;
+	if(_p.min_rank == NaN)
+		R_min = defMinRank;
+	else
+		R_min = _p.min_rank;
 
+	double Lambda=0;
+	if(_p.lambda != defLambda)
+		Lambda = _p.lambda;
+	else
+		Lambda = defMinRank;
+
+	Mat omega=Mat();
+	if (_itl.omega.empty())
+	{
+		omega = Mat::ones(1,N,CV_32F);
+	}
+	else
+	{
+		_itl.omega.copyTo(omega);
+	}
+	//To be Continue
+	//if sum(omega==0)>0
+	//l2_fastalm_mo(_itl,lambda);
 	Mat matH=Mat();
 	Mat matD=Mat();
 	hankel_mo(_itl.xy_data,nr,nc,matD,matH);
@@ -548,10 +564,181 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta)
 		}
 
 	}
-	R = MAX(R_min,R);
+	double R = MAX(R_min,R);
 	R= MIN(R_max,R);
+	return (int)R;
+}
+
+int smot_similarity(I_TRACK_LINK _itl_xy1,I_TRACK_LINK _itl_xy2,int _eta,int _gap,RESULTS &_p1,RESULTS &_p2,double& _rank12,double& _s)
+{
+	int D1 = _itl_xy1.xy_data.rows;
+	int T1 = _itl_xy1.xy_data.cols;
+
+	int D2 = _itl_xy2.xy_data.rows;
+	int T2 = _itl_xy2.xy_data.cols;
+
+	if(D1!=D2)
+		printf("Error:Input dimensions do not agree.\n");
+
+	double defGap      = 0;
+	Mat Omega1   = Mat();
+	Mat Omega2   = Mat();
+	double defRank1    = 0;
+	double defRank2    = 0;
+	BOOL defQCheck   = false;
+
+	double gap = 0;
+	if(_gap == 0)
+		gap = defGap;
+	else
+		gap = _gap;
+
+	if(_itl_xy1.omega.empty())
+		Omega1   = Mat::ones(1,T1,CV_8U);
+	else
+		_itl_xy1.omega.copyTo(Omega1);
+
+	if(_itl_xy2.omega.empty())
+		Omega2   = Mat::ones(1,T1,CV_8U);
+	else
+		_itl_xy2.omega.copyTo(Omega1);
+
+	double rank1 = 0;
+	if(_p1.rank == NaN)
+		rank1 = defRank1;
+	else
+		rank1 = _p1.rank;
+
+	double rank2 = 0;
+	if(_p2.rank == NaN)
+		rank2 = defRank2;
+	else
+		rank2 = _p2.rank;
+
+
+	//修改全局变量
+	BOOL qcheck=_p1.qcheck;
+
+	_p1.rank =(double)smot_rank_admm(_itl_xy1,_eta,_p1);
+	_p2.rank =(double)smot_rank_admm(_itl_xy2,_eta,_p2);
+
+	if(qcheck)
+	{
+		int nr= (int)MIN(T1-rank1,T2-rank2);
+		nr= nr/D1*D1;
+		Mat H1=Mat();
+		Mat H2=Mat();
+		Mat tempD;
+		hankel_mo(_itl_xy1.xy_data,nr,0,tempD,H1);
+		hankel_mo(_itl_xy1.xy_data,nr,0,tempD,H2);
+		Mat combineMat;
+		combineMat.push_back(H1);
+		combineMat.push_back(H2);
+		SVD combineMat_svd(combineMat);
+		int nCount=combineMat_svd.w.total();
+		double  sum=0;
+		for(int i=0;i<nCount;i++)
+		{
+			if(combineMat_svd.w.data[i]>_eta)
+				sum =sum  +combineMat_svd.w.data[i];
+		}
+		_rank12 = sum;
+
+		if(_rank12 > rank1+rank2)
+		{
+			_s =-INF;
+			return 1;
+		}
+	}
+
+	Mat tempMat=Mat();
+
+	Mat XY12_data=Mat();
+	tempMat= _itl_xy1.xy_data.t();
+	XY12_data.push_back(tempMat);
+	tempMat= Mat::zeros((int)gap,(int)D1,CV_32F);
+	XY12_data.push_back(tempMat);
+	tempMat= _itl_xy2.xy_data.t();
+	XY12_data.push_back(tempMat);
+	XY12_data = XY12_data.t();
+
+	Mat Omega12 = Mat();
+	tempMat = Omega1.t();
+	Omega12.push_back(tempMat);
+	tempMat= Mat::zeros((int)gap,1,CV_32F);
+	Omega12.push_back(tempMat);
+	tempMat = Omega2.t();
+	Omega12.push_back(tempMat);
+	Omega12=Omega12.t();
+
+	I_TRACK_LINK itl_xy12;
+	XY12_data.copyTo(itl_xy12.xy_data);
+	Omega12.copyTo(itl_xy12.omega);
+	RESULTS p;
+	p.min_rank = MIN(rank1,rank2);
+	p.max_rank = rank1+rank2;
+	_rank12=smot_rank_admm(itl_xy12,_eta,p);
+
+	_s=(rank1+rank2)/_rank12 -1;
+	if(_s <0.000005)
+		_s=-INF;
+
+	//binlong ：to be continue
 	return 1;
 }
+
+
+void similarity_itl(I_TRACK_LINK& _itl_i,I_TRACK_LINK& _itl_j,DEFAULT_PARAMS _params,double& _rank12,double& _s)
+{
+	double defMaxHorizon = INF;
+	double defMaxGap = INF;
+	double defMaxSlope = INF;
+
+	double hor_max=0;
+	if(_params.hor_max==INF)
+		hor_max = defMaxHorizon;
+	else
+		hor_max = _params.hor_max;
+
+	double gap_max=0;
+	if(_params.gap_max==INF)
+		gap_max = defMaxGap;
+	else
+		gap_max = _params.gap_max;
+
+	double slope_max=0;
+	if(_params.slope_max==INF)
+		slope_max = defMaxSlope;
+	else
+		slope_max = _params.slope_max;
+
+	// Individual Ranks
+	double rank1 = _itl_i.rank;
+	double rank2 = _itl_j.rank;
+	double rank12 =INF;
+
+	if(_itl_i.length<=2 && _itl_j.length<=2)
+		return ;
+	
+	_params.gap = _itl_j.t_start - _itl_i.t_end -1;
+	double slope = 0;
+	Mat tempMat=Mat();
+	addWeighted(_itl_j.xy_data.col(0),1,_itl_i.xy_data.col(_itl_i.xy_data.cols-1),-1,0,tempMat);
+	slope=norm(tempMat,4)/(_params.gap+1);
+	
+
+	RESULTS _itl_p1;
+	RESULTS _itl_p2;
+	if( _params.gap >= 0 && _params.gap < _params.gap_max && slope < (_params.slope_max*2))
+		smot_similarity(_itl_i,_itl_j,_params.eta_max,_params.gap,_itl_p1,_itl_p2,_rank12,_s);
+	else if (0 & (_itl_j.t_start > _itl_i.t_start ) && (_itl_j.t_end < _itl_i.t_end))
+	{
+
+	}
+
+
+}
+
 
 int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param)
 {
@@ -571,28 +758,37 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _par
 	max_gap = max_gap / nCount / 2;
 
 	double max_slope = 0;
-
+	cout<<"********************************************"<<endl;
 	int cols = 0;
 	for(int i=0;i<N;i++)
 	{
 		cols = _itl[i].xy_data.cols;
 		Mat tempData1=_itl[i].xy_data.colRange(0,cols-1);
 		Mat tempData2=_itl[i].xy_data.colRange(1,cols);
+
 		Mat dx;
 		cv::absdiff(tempData1,tempData2,dx);
 		Mat norm_dx = dx.mul(dx);
 		norm_dx.convertTo(norm_dx,CV_32F);
-		sqrt(norm_dx,norm_dx);
+		Mat sum = Mat::zeros(1,norm_dx.cols,CV_32F);
+		for (int i=0;i<norm_dx.rows;i++)
+		{
+			add(norm_dx.row(i),sum,sum);
+		}
+
+		sqrt(sum,norm_dx);
+		cout<<norm_dx<<endl;
 		Mat maxMat;
 		max(norm_dx,max_slope,maxMat);
+		cout<<"maxMat"<<maxMat<<endl;
 		minMaxLoc(maxMat,NULL,&max_slope,NULL,NULL);
 	}
 
-	Mat S = Mat::ones(N,N,CV_32FC1);
-	S.setTo(PINF);
-	cout<<S<<endl;
-
-	float s=0;
+	Mat matS = Mat::ones(N,N,CV_32FC1);
+	matS.setTo(NINF);
+	
+	double rank12;
+	double s=0;
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<N;j++)
@@ -600,10 +796,14 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _par
 			if( i == j)
 				s = NINF;
 			else
-				int kkk=0;
-			//to be continue;
+			{
+				similarity_itl(_itl[i],_itl[j],_param,rank12,s);
+
+			}
+			matS.at<float>(i,j)= (float)s;
 		}
 	}
+	cout<<matS<<endl;
 	return 1;
 }
 
@@ -618,7 +818,7 @@ int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 	int i=0;
 	while(i<N_itlh)
 	{
-		if(itlh[i].id<=2)
+		if(itlh[i].length<=2)
 		{
 			itlh.erase(itlh.begin()+i);
 			N_itlh--;
@@ -626,7 +826,7 @@ int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 		}
 		i++;
 	}
-
+	DEFAULT_PARAMS params;
 	
 	if(!itlh.empty())
 	{
@@ -634,11 +834,12 @@ int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 
 		while(dN>0)
 		{
-
+			compute_itl_similarity_matrix(itlh,params);
 		}
 
 	}
 	
 	return 1;
 }
+
 

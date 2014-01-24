@@ -93,8 +93,11 @@ int main(int argc,char** argv)
 	//	printf("\n");
 	//}
 	//printf("*********************\n");
+	Mat S = Mat::ones(4,4,CV_32FC1);
+	S.setTo(NINF);
+	cout<<S<<endl;
 
-
+	long start_tic=GetTickCount();
 	vector<DATASET> dataset_info;
 	char dataset_name[20]="slalom";
 	
@@ -108,6 +111,12 @@ int main(int argc,char** argv)
 	findAssociations(detect_rect,3,B,distanceSQ);
 	vector<I_TRACK_LINK> itl;
 	linkDetectionTracklets(detect_rect,B,distanceSQ,itl);
+	//growitl  to be continue;
+	
+	associate_itl(itl,0,79);
+
+	long end_tic=GetTickCount();
+	long cost = end_tic - start_tic;
 	char file_name[255]={0};
 	for(int i=0;i<detect_rect.size();i++)
 	{		
