@@ -41,7 +41,12 @@ struct DEFAULT_PARAMS
 	bool debug;
 	int hor;
 	float eta_max;
-
+	BOOL qcheck;
+	double gap;
+	double hor_max ;
+	double gap_max ;
+	double slope_max;
+	
 	DEFAULT_PARAMS()
 	{
 		similarity_method=1;
@@ -50,6 +55,11 @@ struct DEFAULT_PARAMS
 		hor = 40;
 		eta_max = 3;
 		debug=1;
+		gap=0;
+		qcheck=false;
+		hor_max = INF;
+		gap_max = INF;
+		slope_max= INF;
 	}
 };
 
