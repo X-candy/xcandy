@@ -91,7 +91,7 @@ struct I_TRACK_LINK
 		length=0;
 		omega=Mat();
 		xy_data=Mat();
-		rank=NaN;
+		rank=INF;
 	}
 };
 
@@ -104,13 +104,21 @@ struct RESULTS
 	double gap;
 	double lambda;
 
+	double nr;
+	double nc;
+	int MaxIter;
+	double Tol;
 	RESULTS()
 	{
-		rank=NaN;
+		rank=INF;
 		qcheck=0;
-		max_rank=NaN;
-		min_rank=NaN;
-		gap = NaN;
+		max_rank=INF;
+		min_rank=INF;
+		gap = INF;
+		nr =INF;
+		nc=INF;
+		MaxIter=1000;
+		Tol=0.0000001;
 		lambda=0.1;
 	}
 };
