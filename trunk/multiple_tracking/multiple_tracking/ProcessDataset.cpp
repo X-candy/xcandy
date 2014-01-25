@@ -430,8 +430,37 @@ int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_T
 }
 
 
-int l2_fastalm_mo(I_TRACK_LINK _itl)
-{//to be continue
+int l2_fastalm_mo(I_TRACK_LINK _itl,RESULTS _p)
+{
+	int D = _itl.xy_data.rows;
+	int N =_itl.xy_data.cols;
+	Mat Omega  = Mat();
+	int nr = ceil((double)N/(D+1))*D;
+	int nc = N - ceil((double)N/(D+1))+1;
+
+	int defMaxIter = 1000;
+	int defTol = 0.0000001;
+
+	if(_itl.omega.empty())
+		Omega = Mat::ones(1,N,CV_8U);
+	else
+		_itl.omega.copyTo(Omega);
+
+	if(_p.nr ==INF)
+		 _p.nr = nr;
+	else
+		nr =  _p.nr;
+
+	if(_p.nc ==INF)
+		_p.nc = nc;
+	else
+		nc =  _p.nc;
+
+	if(_p.nc ==INF)
+		_p.nc = nc;
+	else
+		nc =  _p.nc;
+
 	return 1;
 }
 
@@ -470,8 +499,7 @@ int  hankel_mo(Mat _itl_xy,int _nr,int  _nc,Mat &_D,Mat &_H)
 		cidx.data[i]=i;
 	}
 	Mat tempCidx=cv::repeat(cidx,_nr,1);
-	cout<<tempCidx<<endl;
-
+	
 	Mat ridx = Mat(1, _nr , CV_8UC1);
 	for(int i=0;i<ridx.cols;i++)
 	{
@@ -481,7 +509,7 @@ int  hankel_mo(Mat _itl_xy,int _nr,int  _nc,Mat &_D,Mat &_H)
 	Mat tempRidx=cv::repeat(ridx,1,_nc);
 	addWeighted(tempRidx,1,tempCidx,dim,0,_H);
 	_H = _H - 1;
-
+	cout<<_H<<endl;
 	//注意变换顺序，MATLAB和OPENCV的转换不同
 	Mat tempT = Mat();
 	tempT=_itl_xy.t();
@@ -490,18 +518,19 @@ int  hankel_mo(Mat _itl_xy,int _nr,int  _nc,Mat &_D,Mat &_H)
 
 	Mat tempSubs=Mat();
 	tempSubs = _H.t();
-	tempSubs = tempSubs.reshape(0,1);
-	tempSubs = tempSubs -1;
+	tempSubs = tempSubs.reshape(1,1);
+	//tempSubs = tempSubs -1;
 	tempSubs.convertTo(tempSubs,CV_8U);
-
+	cout<<tempSubs<<endl;
 	_H = Mat::zeros(_nc,_nr,CV_32FC1);
-	cout<<_H<<endl;
+
 	for(int i=0;i<_nr*_nc;i++)
 	{
 		int idx = tempSubs.data[i];
-		_H.data[i] = tempT.data[idx];
+		_H.at<float>(i) = tempT.at<float>(idx);
 	}
 	_H=_H.t();
+	cout<<_H<<endl;
 	return 1;
 }
 
@@ -518,7 +547,7 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 	double defLambda  = 0.1;
 
 	int R_max =0;
-	if(_p.max_rank == NaN)
+	if(_p.max_rank == INF)
 		R_max = defMaxRank;
 	else
 		R_max = _p.max_rank;
@@ -526,7 +555,7 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 	R_max = MIN(R_max,nc);
 	
 	int R_min = 0;
-	if(_p.min_rank == NaN)
+	if(_p.min_rank == INF)
 		R_min = defMinRank;
 	else
 		R_min = _p.min_rank;
@@ -535,7 +564,7 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 	if(_p.lambda != defLambda)
 		Lambda = _p.lambda;
 	else
-		Lambda = defMinRank;
+		Lambda = defLambda;
 
 	Mat omega=Mat();
 	if (_itl.omega.empty())
@@ -546,25 +575,36 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 	{
 		_itl.omega.copyTo(omega);
 	}
-	//To be Continue
-	//if sum(omega==0)>0
-	//l2_fastalm_mo(_itl,lambda);
+	
+	int nCount_total_omega = omega.total();
+	int nCount_zero_omega=0;
+	for(int i=0;i<nCount_total_omega;i++)
+	{
+		if(omega.at<float>(i)==0)
+			nCount_zero_omega++;
+	}
+
+	if( nCount_zero_omega > 0)
+		l2_fastalm_mo(_itl,Lambda);
 	Mat matH=Mat();
 	Mat matD=Mat();
-	hankel_mo(_itl.xy_data,nr,nc,matD,matH);
+	cout<<"++++++++++++++++++++++"<<endl;
+	cout<<_itl.xy_data<<endl;
+	hankel_mo(_itl.xy_data,0,R_max,matD,matH);
 
 	SVD matH_SVD(matH);
+	cout<<matH_SVD.w<<endl;
 	int nCount_matH_SVDW=matH_SVD.w.total();
-	double sum_matH_SVDW=0;
+	int total_matH_SVDW=0;
 	for(int i =0;i<nCount_matH_SVDW;i++)
 	{
-		if(matH_SVD.w.data[i]>_eta)
+		if(matH_SVD.w.at<float>(i)>_eta)
 		{
-			sum_matH_SVDW = matH_SVD.w.data[i] + sum_matH_SVDW;
+			total_matH_SVDW ++;
 		}
 
 	}
-	double R = MAX(R_min,R);
+	double R = MAX(R_min,total_matH_SVDW);
 	R= MIN(R_max,R);
 	return (int)R;
 }
@@ -583,8 +623,8 @@ int smot_similarity(I_TRACK_LINK _itl_xy1,I_TRACK_LINK _itl_xy2,int _eta,int _ga
 	double defGap      = 0;
 	Mat Omega1   = Mat();
 	Mat Omega2   = Mat();
-	double defRank1    = 0;
-	double defRank2    = 0;
+	double defRank1    = INF;
+	double defRank2    = INF;
 	BOOL defQCheck   = false;
 
 	double gap = 0;
@@ -601,27 +641,29 @@ int smot_similarity(I_TRACK_LINK _itl_xy1,I_TRACK_LINK _itl_xy2,int _eta,int _ga
 	if(_itl_xy2.omega.empty())
 		Omega2   = Mat::ones(1,T1,CV_8U);
 	else
-		_itl_xy2.omega.copyTo(Omega1);
+		_itl_xy2.omega.copyTo(Omega2);
 
 	double rank1 = 0;
-	if(_p1.rank == NaN)
+	if(_p1.rank == INF)
 		rank1 = defRank1;
 	else
 		rank1 = _p1.rank;
 
 	double rank2 = 0;
-	if(_p2.rank == NaN)
+	if(_p2.rank == INF)
 		rank2 = defRank2;
 	else
 		rank2 = _p2.rank;
 
+	cout<<Omega1<<endl;
 
 	//修改全局变量
 	BOOL qcheck=_p1.qcheck;
 
 	_p1.rank =(double)smot_rank_admm(_itl_xy1,_eta,_p1);
 	_p2.rank =(double)smot_rank_admm(_itl_xy2,_eta,_p2);
-
+	rank1 = _p1.rank ;
+	rank2 = _p2.rank ;
 	if(qcheck)
 	{
 		int nr= (int)MIN(T1-rank1,T2-rank2);
@@ -661,7 +703,7 @@ int smot_similarity(I_TRACK_LINK _itl_xy1,I_TRACK_LINK _itl_xy2,int _eta,int _ga
 	tempMat= _itl_xy2.xy_data.t();
 	XY12_data.push_back(tempMat);
 	XY12_data = XY12_data.t();
-
+	
 	Mat Omega12 = Mat();
 	tempMat = Omega1.t();
 	Omega12.push_back(tempMat);
@@ -787,9 +829,13 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _par
 	Mat matS = Mat::ones(N,N,CV_32FC1);
 	matS.setTo(NINF);
 	
-	double rank12;
+
+	_param.slope_max = max_slope;
+	_param.gap_max = max_gap;
+
+	double rank12=INF;
 	double s=0;
-	for(int i=0;i<N;i++)
+	for(int i=0;i<N;i=i++)
 	{
 		for(int j=0;j<N;j++)
 		{
@@ -798,7 +844,6 @@ int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _par
 			else
 			{
 				similarity_itl(_itl[i],_itl[j],_param,rank12,s);
-
 			}
 			matS.at<float>(i,j)= (float)s;
 		}

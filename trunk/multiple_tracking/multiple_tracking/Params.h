@@ -52,7 +52,7 @@ struct DEFAULT_PARAMS
 		similarity_method=1;
 		min_similarity=0.01;
 		mota_threhold=0.5;
-		hor = 40;
+		hor = 80;
 		eta_max = 3;
 		debug=1;
 		gap=0;
