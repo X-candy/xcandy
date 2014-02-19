@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "multiple_tracking", "multiple_tracking\multiple_tracking.vcxproj", "{B967EF2E-33FE-4653-BE18-77DB95341CA1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{88D81E04-E3BC-43FF-B8F7-D7AA15AFD966}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -13,6 +15,10 @@ Global
 		{B967EF2E-33FE-4653-BE18-77DB95341CA1}.Debug|Win32.Build.0 = Debug|Win32
 		{B967EF2E-33FE-4653-BE18-77DB95341CA1}.Release|Win32.ActiveCfg = Release|Win32
 		{B967EF2E-33FE-4653-BE18-77DB95341CA1}.Release|Win32.Build.0 = Release|Win32
+		{88D81E04-E3BC-43FF-B8F7-D7AA15AFD966}.Debug|Win32.ActiveCfg = Debug|Win32
+		{88D81E04-E3BC-43FF-B8F7-D7AA15AFD966}.Debug|Win32.Build.0 = Debug|Win32
+		{88D81E04-E3BC-43FF-B8F7-D7AA15AFD966}.Release|Win32.ActiveCfg = Release|Win32
+		{88D81E04-E3BC-43FF-B8F7-D7AA15AFD966}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
