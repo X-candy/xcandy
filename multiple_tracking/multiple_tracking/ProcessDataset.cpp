@@ -584,8 +584,8 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 			nCount_zero_omega++;
 	}
 
-	if( nCount_zero_omega > 0)
-		l2_fastalm_mo(_itl,Lambda);
+	//if( nCount_zero_omega > 0)
+	//	l2_fastalm_mo(_itl,Lambda);
 	Mat matH=Mat();
 	Mat matD=Mat();
 	cout<<"++++++++++++++++++++++"<<endl;
@@ -872,16 +872,19 @@ int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 		i++;
 	}
 	DEFAULT_PARAMS params;
-	
+	int Nnew =0;
+	int dN=1;
 	if(!itlh.empty())
 	{
-		int dN=1;
-
 		while(dN>0)
 		{
 			compute_itl_similarity_matrix(itlh,params);
+			Nnew = itlh.size();
+			dN = N - Nnew;
+			N = Nnew;
 		}
 
+		
 	}
 	
 	return 1;
