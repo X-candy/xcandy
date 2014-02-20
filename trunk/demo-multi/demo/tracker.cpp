@@ -47,6 +47,7 @@ int CTracker::tracker(int _frame_num,vector<Rect> _detect_rect,Mat _frame)
 	//cout<<endl<<"*****************"<<endl;
 	///*if(_frame_num>30)*/
 	LinkDetectionTracklets(m_detect_rect_squence,m_B,m_distanceSQ,m_itl);
+	LinkDetectionTracklets1(m_detect_rect_squence,m_B,m_distanceSQ,m_itl1);
 	
 	if(m_itl.size()>=1)
 	{
@@ -84,17 +85,19 @@ int CTracker::tracker(int _frame_num,vector<Rect> _detect_rect,Mat _frame)
 			nEndFrame = m_itl[i].t_end;
 	}
 
-	associate_itl(m_itl,nStartFrame,nEndFrame);
+	Associate_ITL(m_itl,nStartFrame,nEndFrame);
 	return 1;
 }
 
 int CTracker::InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _frame_num,vector<Rect> _detect_rect)
 {
+	//队列不满
 	if(_frame_num < m_nHistoryLen)
 	{
 		_detect_rect_squence[_frame_num].detect_rect=_detect_rect;
 		for (int i=0;i<_detect_rect.size();i++)
 		{
+			//生成rect的IDX
 			_detect_rect_squence[_frame_num].idx.push_back(i);
 			Point center;
 			center.x = _detect_rect_squence[_frame_num].detect_rect[i].x + _detect_rect_squence[_frame_num].detect_rect[i].width/2;
@@ -103,6 +106,7 @@ int CTracker::InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _fram
 		}
 		_detect_rect_squence[_frame_num].frame_num= _frame_num;
 	}
+	//队列满，擦处队列第一个
 	else
 	{
 		_detect_rect_squence.erase(_detect_rect_squence.begin());
@@ -110,6 +114,7 @@ int CTracker::InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _fram
 		tempDetectRect.detect_rect = _detect_rect;
 		for (int i=0;i<_detect_rect.size();i++)
 		{
+			//生成rect的IDX
 			tempDetectRect.idx.push_back(i);
 			Point center;
 			center.x = tempDetectRect.detect_rect[i].x + tempDetectRect.detect_rect[i].width/2;
@@ -143,7 +148,7 @@ void  CTracker::DiffMat(Mat _a,Mat &_b)  //求向量B的一阶差分 功能等价matlab里的d
 	}
 }
 
-void CTracker::nonunique(Mat _a,Mat &_b)
+void CTracker::NONUnique(Mat _a,Mat &_b)
 {
 	if(_a.empty())
 		return;
@@ -308,7 +313,7 @@ int CTracker::CalRectDistance(DETECTRECT _detect_rect_t,DETECTRECT _detect_rect_
 		Mat rlt;
 		//cout<<tempmat<<endl;
 		//检测重复的idx
-		nonunique(tempmat,rlt);
+		NONUnique(tempmat,rlt);
 		
 		//cout<<"rlt="<<rlt<<endl;
 		rlt.copyTo(_rlt);
@@ -429,23 +434,24 @@ int CTracker::FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _rat
 	return 1;
 }
 
-int CTracker::getxychain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy)
+int CTracker::GetXYChain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy)
 {
 	int length= _b.size();
 	int tfirst = _frame;
-	Mat xy = Mat(2,length,CV_32FC1);
+	Mat xy = Mat(7,length,CV_32FC1);
 	xy.setTo(0);
 	while(_frame<length-1 && _ind>=0)
 	{
 		Mat tempXYt=xy.colRange(_frame,_frame+1);
 		tempXYt.at<float>(0,0)=(float)_detect_rect_squence[_frame].detect_rect_center[_ind].x;
 		tempXYt.at<float>(1,0)=(float)_detect_rect_squence[_frame].detect_rect_center[_ind].y;
-		/*tempXYt.at<float>(2,0)=(float)_detect_rect_squence[_frame].detect_rect[_ind].x;
+		
+		tempXYt.at<float>(2,0)=(float)_detect_rect_squence[_frame].detect_rect[_ind].x;
 		tempXYt.at<float>(3,0)=(float)_detect_rect_squence[_frame].detect_rect[_ind].x;
 		tempXYt.at<float>(4,0)=(float)_detect_rect_squence[_frame].detect_rect[_ind].width;
 		tempXYt.at<float>(5,0)=(float)_detect_rect_squence[_frame].detect_rect[_ind].height;
-
-		*/
+		tempXYt.at<float>(6,0)=(float)_detect_rect_squence[_frame].idx[_ind];
+		
 		if(_ind >= _b[_frame].cols)
 			_ind = 0;
 		int indnext =(int) _b[_frame].at<float>(0,_ind);
@@ -469,12 +475,23 @@ int CTracker::LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,ve
 	Mat xy=Mat();
 	vector<Mat> tempvector;
 
+	if(m_frame_num<95 && m_frame_num>90)
+	{
+		cout<<"**********************_b*************************"<<endl;
+	}
 
 	for (int i=0;i<_b.size();i++)
 	{
 		Mat temp_mat;
 		_b[i].copyTo(temp_mat);
 		tempvector.push_back(temp_mat);
+		if(m_frame_num<95 && m_frame_num>90)
+			cout<<temp_mat<<",";
+	}
+	
+	if(m_frame_num<95 && m_frame_num>90)
+	{
+		cout<<endl;
 	}
 
 	for(int i=0;i<_b.size();i++)
@@ -486,16 +503,20 @@ int CTracker::LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,ve
 		{
 			if(tempvector[i].at<float>(0,k)>-1)
 			{
-				getxychain(_detect_rect_squence,tempvector,i,k,xy);
+				GetXYChain(_detect_rect_squence,tempvector,i,k,xy);
 				I_TRACK_LINK tempITL;
 				int l=xy.cols;
 
-				tempITL.t_start = i;
-				tempITL.t_end = i+l-1;
+				tempITL.t_start = i + _detect_rect_squence[0].frame_num;
+				tempITL.t_end = tempITL.t_start +l-1;
 				tempITL.length=l;
 				tempITL.omega=Mat(1,l,CV_32FC1);
 				tempITL.omega.setTo(1);
-				xy.copyTo(tempITL.xy_data);
+				//xy:前两行中心点坐标，后四行为rect区域
+				Mat temp_xy_data = xy.rowRange(0,2);
+				Mat temp_rect_data = xy.rowRange(2,6);
+				temp_xy_data.copyTo(tempITL.xy_data);
+				temp_rect_data.copyTo(tempITL.rect_data);
 				_itl.push_back(tempITL);
 			}
 		}
@@ -532,7 +553,7 @@ int growitl(vector<I_TRACK_LINK> _itl,int max_D)
 	return 1;
 }
 
-int CTracker::get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh)
+int CTracker::Get_ITL_Horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh)
 {
 	int N=_itl.size();
 
@@ -950,7 +971,7 @@ void similarity_itl(I_TRACK_LINK& _itl_i,I_TRACK_LINK& _itl_j,DEFAULT_PARAMS _pa
 
 }
 
-int CTracker::compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param)
+int CTracker::Compute_ITL_Similarity_Matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param)
 {
 	int N=_itl.size();
 
@@ -1020,13 +1041,11 @@ int CTracker::compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_P
 	return 1;
 }
 
-int  CTracker::associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
+int  CTracker::Associate_ITL(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 {
 	int N=_itl.size();
 	vector<I_TRACK_LINK> itlh;
-	get_itl_horizon(_itl,_t_start,_t_end,itlh);
-	if(_itl.size()>=2)
-		int  jkjk=0;
+
 	//去除过短的跟踪线
 	int N_itlh = itlh.size();
 	int i=0;
@@ -1048,7 +1067,7 @@ int  CTracker::associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 	{
 		while(dN>0)
 		{
-			compute_itl_similarity_matrix(itlh,params);
+			Compute_ITL_Similarity_Matrix(itlh,params);
 			Nnew = itlh.size();
 			dN = N - Nnew;
 			N = Nnew;
@@ -1059,12 +1078,91 @@ int  CTracker::associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 	return 1;
 }
 
-
-
-int CTracker::LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,Mat _b,int _ind,Mat _xy)
+int CTracker::Compute_DetectionTracklets_Similarity(vector<I_TRACK_LINK> &_itl)
 {
-	if(_detect_rect_squence.size()<0)
-		return -1;
+	//无可跟踪目标
+	if(m_itl.size()<=0 && _itl.size()<=0)
+	{
+		m_itl.clear();
+	}
+	//出现新的跟踪目标
+	else if(m_itl.size()<=0 && _itl.size()>0)
+	{
+		m_itl = _itl;
+		for(int i=0;i<m_itl.size();i++)
+		{
+			m_itl[i].id=GetTickCount();
+		}	
+	}
+	else
+	{
+		//检测是否是现有队列中的跟踪目标
+		for(int i=0;i<_itl.size();i++)
+		{
+			for(int j=0;j< m_itl.size();j++)
+			{
+				//判断时间是否重复
+			/*	if(m_itl[j].t_end == _itl[i].t_end || )*/
+
+			}
+		}
+		
+
+	}
+	
 	return 1;
 }
 
+int CTracker::LinkDetectionTracklets1(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl)
+{
+	int b_length= _b.size();
+	if(b_length < 2)
+		return -1;
+	//当前T时刻
+	int T_b_cols = _b[b_length-1].cols;
+	int T_b_rows = _b[b_length-1].rows;
+
+	//T-1时刻
+	int Tnp1_b_cols = _b[b_length-2].cols;
+	int Tnp1_b_rows = _b[b_length-2].rows;
+	//没有跟踪目标
+	if(Tnp1_b_cols == 0 || Tnp1_b_rows==0)
+		return -1;
+
+	//发现跟踪目标，查找与T-1时刻的关系
+	//T-1为空，新发现目标
+	for(int i=0;i<Tnp1_b_cols;i++)
+	{
+		if(_b[b_length-2].at<float>(0,i)>-1)
+		{
+			int ind = i;
+			if (ind >=0)
+			{
+				Mat tempXYt = Mat(7,1,CV_32FC1);
+				tempXYt.at<float>(0,0)=(float)_detect_rect_squence[b_length-2].detect_rect_center[ind].x;
+				tempXYt.at<float>(1,0)=(float)_detect_rect_squence[b_length-2].detect_rect_center[ind].y;
+
+				tempXYt.at<float>(2,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].x;
+				tempXYt.at<float>(3,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].x;
+				tempXYt.at<float>(4,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].width;
+				tempXYt.at<float>(5,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].height;
+				tempXYt.at<float>(6,0)=(float)_detect_rect_squence[b_length-2].idx[ind];
+				if(ind >= _b[b_length-2].cols)
+					ind = 0;
+				int indnext =(int) _b[b_length-1].at<float>(0,ind);
+				_b[b_length-1].at<float>(0,ind) = -1;
+				ind = indnext;
+			}
+			I_TRACK_LINK new_itl;
+			new_itl.id = GetTickCount();
+			new_itl.t_start = _detect_rect_squence[b_length-2].frame_num;
+			new_itl.t_end = new_itl.t_start;
+			new_itl.length = 1;
+			
+			_itl.push_back(new_itl);
+		}
+	}
+
+
+	return 1;
+}

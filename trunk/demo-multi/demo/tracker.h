@@ -21,7 +21,8 @@ struct I_TRACK_LINK
 	int length;
 	Mat omega;
 	Mat xy_data;
-	vector<Rect> detect_rect;
+	Mat rect_data;
+	Mat rect_id;
 	double rank;
 	I_TRACK_LINK()
 	{
@@ -32,7 +33,7 @@ struct I_TRACK_LINK
 		omega=Mat();
 		xy_data=Mat();
 		rank=INF;
-		detect_rect.clear();
+		rect_data=Mat();
 	}
 };
 
@@ -105,17 +106,23 @@ public:
 	~CTracker(void);
 	int tracker(int _frame_num,vector<Rect> _detect_rect,Mat _frame);
 	vector<I_TRACK_LINK> m_itl;
+
+	vector<I_TRACK_LINK> m_itl1;
 private:
 	int InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _frame_num,vector<Rect> _detect_rect);
 	int FindAssociations(vector<DETECTRECT> &_detect_rect,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance);
 	int LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl);
 	int CalRectDistance(DETECTRECT _detect_rect_t,DETECTRECT _detect_rect_tp1,int _ratio_threhold,Mat& _mat_distance,Mat& _rlt);
-	int getxychain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy);
-	void nonunique(Mat _a,Mat &_b);
+	int Compute_DetectionTracklets_Similarity(vector<I_TRACK_LINK> &_itl);
+	int GetXYChain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy);
+	void NONUnique(Mat _a,Mat &_b);
 	void DiffMat(Mat _a,Mat &_b);
-	int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end);
-	int get_itl_horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh);
-	int compute_itl_similarity_matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param);
+	int Associate_ITL(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end);
+	int Get_ITL_Horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh);
+	int Compute_ITL_Similarity_Matrix(vector<I_TRACK_LINK> &_itl,DEFAULT_PARAMS _param);
+	
+	
+
 	int m_dSimilarity_method;
 	int m_ratio_threhold;
 	int m_nHor;
@@ -139,9 +146,8 @@ private:
 	Mat m_Ratio;
 	Mat m_f;
 	double m_lastminD2;
-
-
-	//REALTIME
-	int LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,Mat _b,int _ind,Mat _xy);
+	
+	int LinkDetectionTracklets1(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl);
+//	int FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance);
 };
 
