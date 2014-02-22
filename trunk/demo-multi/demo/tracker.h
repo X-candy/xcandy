@@ -3,13 +3,16 @@
 struct DETECTRECT
 {
 	vector<int> idx;
+	vector<int> object_id;
 	vector<Rect> detect_rect;
 	vector<Point> detect_rect_center;
 	long frame_num;
 	DETECTRECT()
 	{
+		object_id.clear();
 		idx.clear();
 		detect_rect.clear();
+		detect_rect_center.clear();
 	}
 };
 
@@ -115,7 +118,7 @@ private:
 	int CalRectDistance(DETECTRECT _detect_rect_t,DETECTRECT _detect_rect_tp1,int _ratio_threhold,Mat& _mat_distance,Mat& _rlt);
 	int Compute_DetectionTracklets_Similarity(vector<I_TRACK_LINK> &_itl);
 	int GetXYChain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy);
-	void NONUnique(Mat _a,Mat &_b);
+	void NONUnique(Mat _a,Mat _distance,Mat &_b);
 	void DiffMat(Mat _a,Mat &_b);
 	int Associate_ITL(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end);
 	int Get_ITL_Horizon(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end,vector<I_TRACK_LINK> &_itlh);

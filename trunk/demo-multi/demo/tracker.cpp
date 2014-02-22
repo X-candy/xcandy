@@ -40,52 +40,75 @@ int CTracker::tracker(int _frame_num,vector<Rect> _detect_rect,Mat _frame)
 	InputDetectRect(m_detect_rect_squence,_frame_num,_detect_rect);
 	FindAssociations(m_detect_rect_squence,m_ratio_threhold,m_B,m_distanceSQ);
 	cout<<"********"<<_frame_num<<"*********"<<endl;
-	//for(int i=0;i<m_B.size();i++)
-	//{
-	//	cout<<m_B[i];
-	//}
-	//cout<<endl<<"*****************"<<endl;
-	///*if(_frame_num>30)*/
-	LinkDetectionTracklets(m_detect_rect_squence,m_B,m_distanceSQ,m_itl);
-	LinkDetectionTracklets1(m_detect_rect_squence,m_B,m_distanceSQ,m_itl1);
-	
-	if(m_itl.size()>=1)
+	if(_frame_num >70)
 	{
-		for(int i=0;i< m_itl.size();i++)
+		for(int i=0;i<m_B.size();i++)
 		{
-			if(m_itl[i].length>=3)
-			{
-				for(int j=0;j<m_itl[i].length-1;j++)
-				{
-					Point x1;
-					x1.x = (int)m_itl[i].xy_data.at<float>(0,j);
-					x1.y = (int)m_itl[i].xy_data.at<float>(1,j);
-					cv::circle( m_frame, x1, 1, cv::Scalar( i*20&255 , i*20&255 , 0 ), 3 );
-				}
-				imshow("m_frame",m_frame);
-			}
+			cout<<m_B[i];
 		}
-
+		cout<<endl<<"*****************"<<endl;
 	}
-	waitKey(1);
-	int nStartFrame=0;
-	int nEndFrame=m_nHistoryLen-1;
-	if(m_itl.size()>0)
-	{
-		nStartFrame = m_itl[0].t_start;
-		nEndFrame = m_itl[0].t_end;
-	}
+	
+	///*if(_frame_num>30)*/
 
 
-	for(int i=0;i<m_itl.size();i++)
-	{
-		if(nStartFrame > m_itl[i].t_start)
-			nStartFrame = m_itl[i].t_start;
-		if(nEndFrame < m_itl[i].t_end)
-			nEndFrame = m_itl[i].t_end;
-	}
+	//11:22 -2014/2/21临时注释
 
-	Associate_ITL(m_itl,nStartFrame,nEndFrame);
+//	LinkDetectionTracklets(m_detect_rect_squence,m_B,m_distanceSQ,m_itl);
+	//LinkDetectionTracklets1(m_detect_rect_squence,m_B,m_distanceSQ,m_itl1);
+
+
+	//if(m_frame_num<100 && m_frame_num>71)
+	//{
+	//	cout<<"**********************m_itl*************************"<<endl;
+	//	for(int i=0;i<m_itl.size();i++)
+	//	{
+	//		cout<<m_itl[i].xy_data<<endl;
+	//	}
+	//	cout<<"**********************m_itl*************************"<<endl;
+	//	for(int i=0;i<m_itl1.size();i++)
+	//	{
+	//		cout<<m_itl1[i].xy_data<<endl;
+	//	}
+	//}
+
+	//if(m_itl.size()>=1)
+	//{
+	//	for(int i=0;i< m_itl.size();i++)
+	//	{
+	//		if(m_itl[i].length>=3)
+	//		{
+	//			for(int j=0;j<m_itl[i].length-1;j++)
+	//			{
+	//				Point x1;
+	//				x1.x = (int)m_itl[i].xy_data.at<float>(0,j);
+	//				x1.y = (int)m_itl[i].xy_data.at<float>(1,j);
+	//				cv::circle( m_frame, x1, 1, cv::Scalar( i*20&255 , i*20&255 , 0 ), 3 );
+	//			}
+	//			imshow("m_frame",m_frame);
+	//		}
+	//	}
+
+	//}
+	//waitKey(1);
+	//int nStartFrame=0;
+	//int nEndFrame=m_nHistoryLen-1;
+	//if(m_itl.size()>0)
+	//{
+	//	nStartFrame = m_itl[0].t_start;
+	//	nEndFrame = m_itl[0].t_end;
+	//}
+
+
+	//for(int i=0;i<m_itl.size();i++)
+	//{
+	//	if(nStartFrame > m_itl[i].t_start)
+	//		nStartFrame = m_itl[i].t_start;
+	//	if(nEndFrame < m_itl[i].t_end)
+	//		nEndFrame = m_itl[i].t_end;
+	//}
+
+	//Associate_ITL(m_itl,nStartFrame,nEndFrame);
 	return 1;
 }
 
@@ -103,6 +126,7 @@ int CTracker::InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _fram
 			center.x = _detect_rect_squence[_frame_num].detect_rect[i].x + _detect_rect_squence[_frame_num].detect_rect[i].width/2;
 			center.y = _detect_rect_squence[_frame_num].detect_rect[i].y + _detect_rect_squence[_frame_num].detect_rect[i].height/2;
 			_detect_rect_squence[_frame_num].detect_rect_center.push_back(center);
+			_detect_rect_squence[_frame_num].object_id.push_back(0);
 		}
 		_detect_rect_squence[_frame_num].frame_num= _frame_num;
 	}
@@ -120,6 +144,7 @@ int CTracker::InputDetectRect(vector<DETECTRECT> &_detect_rect_squence,int _fram
 			center.x = tempDetectRect.detect_rect[i].x + tempDetectRect.detect_rect[i].width/2;
 			center.y = tempDetectRect.detect_rect[i].y + tempDetectRect.detect_rect[i].height/2;
 			tempDetectRect.detect_rect_center.push_back(center);
+			tempDetectRect.object_id.push_back(0);
 		}
 		tempDetectRect.frame_num = _frame_num;
 
@@ -148,8 +173,10 @@ void  CTracker::DiffMat(Mat _a,Mat &_b)  //求向量B的一阶差分 功能等价matlab里的d
 	}
 }
 
-void CTracker::NONUnique(Mat _a,Mat &_b)
+void CTracker::NONUnique(Mat _a,Mat _distance,Mat &_b)
 {
+	if(m_frame_num >=91)
+		int klkl=0;
 	if(_a.empty())
 		return;
 	int rows = _a.rows;
@@ -175,14 +202,21 @@ void CTracker::NONUnique(Mat _a,Mat &_b)
 
 	Mat db;
 	DiffMat(sorted,db);
-
+	cout<<"db="<<db<<endl;
 	Mat d = Mat(1,cols*rows,CV_8U);
 	Mat tempd= (db!=0);
+	cout<<"tempd="<<tempd<<endl;
 	int tempd_size=tempd.channels()*tempd.cols*tempd.step*tempd.elemSize();
 	memcpy(d.data,tempd.data,tempd_size);
 	d.at<uchar>(0,cols*rows-1)=255;
 
 	int nNonZero=countNonZero(d);
+	int nZero = d.cols * d.rows - nNonZero;
+	//Mat
+	//for(int i=0;i<d.cols * d.rows;i++)
+	//{
+	//	if()
+	//}
 
 	Mat tempB=Mat(1,nNonZero,CV_32F);
 
@@ -205,6 +239,7 @@ void CTracker::NONUnique(Mat _a,Mat &_b)
 	}
 	else
 	{
+		//计算矩阵中各值的直方图
 		vector<int> nhistCount(nNonZero);
 
 		for(int k=0;k<numelA;k++)
@@ -216,6 +251,7 @@ void CTracker::NONUnique(Mat _a,Mat &_b)
 			}
 		}
 
+		//重复元素进行压栈
 		vector<float> tempVectorB;
 		for(int k=0;k<nNonZero;k++)
 		{
@@ -231,15 +267,31 @@ void CTracker::NONUnique(Mat _a,Mat &_b)
 			{
 				if(tempVectorB[k] > 0)
 				{
+					double temp_distance=-1;
 					for(int j=0;j<numelA;j++)
-					{
+					{			
+						//重复元素的处理
 						if(tempA.at<float>(0,j) == tempVectorB[k] )
-							tempA.at<float>(0,j) = 0;
+						{
+							temp_distance = _distance.at<float>(j,0);
+							//tempA.at<float>(0,j) = tempVectorB[k];
+							//距离远的置为-1，距离近的置为下一序
+							
+							if(temp_distance<)
+							{
+
+							}
+							else
+							{
+								tempA.at<float>(0,j) = tempVectorB[k];
+							}
+						}
 					}
 				}
 			}
 		}
 		tempA.copyTo(_b);
+		cout<<"tempA="<<tempA<<endl;
 	}
 }
 
@@ -305,17 +357,15 @@ int CTracker::CalRectDistance(DETECTRECT _detect_rect_t,DETECTRECT _detect_rect_
 		}
 
 		Mat A=DIdx.colRange(0,1);
-		//cout<<A<<endl;
-		//cout<<DIdx<<endl;
 		A.convertTo(A,CV_8UC1);
 
 		Mat tempmat=A.mul(m_f/255);
 		Mat rlt;
-		//cout<<tempmat<<endl;
+		cout<<"DIdx="<<tempmat<<endl;
 		//检测重复的idx
-		NONUnique(tempmat,rlt);
+		NONUnique(tempmat,rlt,mat_distance);
 		
-		//cout<<"rlt="<<rlt<<endl;
+		cout<<"rlt="<<rlt<<endl;
 		rlt.copyTo(_rlt);
 	}
 	else
@@ -333,22 +383,26 @@ int CTracker::FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _rat
 		_b.erase(_b.begin());
 		_distance.erase(_distance.begin());
 	}
-	if(m_frame_num >= 1)
+
+
+	if(m_frame_num > 0)
 	{
-		int T=_b.size()-1;
+		int T=_b.size();
 		//上一时刻的检测框数量
 		int N_t=_detect_rect_squence[T].detect_rect.size();
 		//当前时刻的检测框数量
-		int N_tp1=_detect_rect_squence[T+1].detect_rect.size();
+		int N_tp1=_detect_rect_squence[T-1].detect_rect.size();
 		if( N_t > 0 && N_tp1> 0)
 		{
 			Mat mat_distance = Mat(N_t,N_tp1,CV_32FC1);
 			Mat rlt;
-			CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[T+1],_ratio_threhold,mat_distance,rlt);
-			mat_distance.copyTo(_distance[T]);
-			rlt.copyTo(_b[T]);	
-			/*		cout<<"_distance["<<T<<"]="<<_distance[T]<<endl;
+			CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[T-1],_ratio_threhold,mat_distance,rlt);
+			//CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[T+1],_ratio_threhold,mat_distance,rlt);
+			_distance.push_back(mat_distance);
+			_b.push_back(rlt);	
+			//cout<<"_distance["<<T<<"]="<<_distance[T]<<endl;
 			cout<<"_b["<<T<<"]="<<_b[T]<<endl;
+			/*
 			for(int i=0;i<_detect_rect_squence[T].detect_rect.size();i++)
 			{
 			rectangle(m_frame,_detect_rect_squence[T].detect_rect[i],Scalar(255,0,0));
@@ -362,16 +416,23 @@ int CTracker::FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _rat
 			imshow("m_frame",m_frame);
 			waitKey(1);*/
 		}
+		else
+		{
+			N_tp1 = _detect_rect_squence[T].detect_rect.size();
+			Mat tempmat=Mat(1,N_tp1,CV_32FC1);
+			tempmat.setTo(-1);
+			_b.push_back(tempmat);
 
-		N_tp1 = _detect_rect_squence[T+1].detect_rect.size();
-		Mat tempmat=Mat(1,N_tp1,CV_32FC1);
-		tempmat.setTo(-1);
-		_b.push_back(tempmat);
+			Mat temp_distance=Mat(1,0,CV_32F);
+			_distance.push_back(temp_distance);
+		}
+		if(N_t > N_tp1)
+		{
+			Mat tempmat = Mat(1,N_t,CV_32FC1);
 
-		Mat temp_distance=Mat(1,0,CV_32F);
-		_distance.push_back(temp_distance);
+		}
 	}
-	else if(m_frame_num == 0)
+	else if(m_frame_num ==0)
 	{
 		Mat tempmat=Mat(1,0,CV_32F);
 		_b.push_back(tempmat);
@@ -434,6 +495,120 @@ int CTracker::FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _rat
 	return 1;
 }
 
+//分段程序
+//int CTracker::FindAssociations(vector<DETECTRECT> &_detect_rect_squence,int _ratio_threhold,vector<Mat> &_b,vector<Mat> &_distance)
+//{
+//	//序列不满足m_nHistoryLen长度的
+//	if(m_frame_num >= m_nHistoryLen )
+//	{
+//		_b.erase(_b.begin());
+//		_distance.erase(_distance.begin());
+//	}
+//
+//
+//	if(m_frame_num >= 1)
+//	{
+//		int T=_b.size()-1;
+//		//上一时刻的检测框数量
+//		int N_t=_detect_rect_squence[T].detect_rect.size();
+//		//当前时刻的检测框数量
+//		int N_tp1=_detect_rect_squence[T+1].detect_rect.size();
+//		if( N_t > 0 && N_tp1> 0)
+//		{
+//			Mat mat_distance = Mat(N_t,N_tp1,CV_32FC1);
+//			Mat rlt;
+//			CalRectDistance(_detect_rect_squence[T+1],_detect_rect_squence[T],_ratio_threhold,mat_distance,rlt);
+//			//CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[T+1],_ratio_threhold,mat_distance,rlt);
+//			mat_distance.copyTo(_distance[T]);
+//			rlt.copyTo(_b[T]);	
+//	/*		cout<<"_distance["<<T<<"]="<<_distance[T]<<endl;
+//			cout<<"_b["<<T<<"]="<<_b[T]<<endl;*/
+//			/*
+//			for(int i=0;i<_detect_rect_squence[T].detect_rect.size();i++)
+//			{
+//			rectangle(m_frame,_detect_rect_squence[T].detect_rect[i],Scalar(255,0,0));
+//			}
+//
+//			for(int i=0;i<rlt.cols;i++)
+//			{
+//			int indx= rlt.at<float>(i);
+//			rectangle(m_frame,_detect_rect_squence[T+1].detect_rect[indx],Scalar(0,255,0));
+//			}
+//			imshow("m_frame",m_frame);
+//			waitKey(1);*/
+//		}
+//
+//		N_tp1 = _detect_rect_squence[T+1].detect_rect.size();
+//		Mat tempmat=Mat(1,N_tp1,CV_32FC1);
+//		tempmat.setTo(-1);
+//		_b.push_back(tempmat);
+//
+//		Mat temp_distance=Mat(1,0,CV_32F);
+//		_distance.push_back(temp_distance);
+//	}
+//	else if(m_frame_num == 0)
+//	{
+//		Mat tempmat=Mat(1,0,CV_32F);
+//		_b.push_back(tempmat);
+//
+//		Mat temp_distance=Mat(1,0,CV_32F);
+//		_distance.push_back(temp_distance);
+//	}
+//	else
+//	{
+//		int T=_b.size()-1;
+//		Mat tempmat=Mat(1,0,CV_32F);
+//		tempmat.copyTo(_b[T]);
+//
+//		Mat temp_distance=Mat(1,0,CV_32F);
+//		temp_distance.copyTo(_distance[T]);
+//	}
+//	//else if(m_frame_num >= 2)
+//	//{
+//	//	//求取倒数第二帧的距离矩阵
+//	//	int T=m_nHistoryLen-2;
+//	//	int N_t=_detect_rect_squence[T].detect_rect.size();
+//	//	//t+1时刻的检测框数量
+//	//	int N_tp1=_detect_rect_squence[T+1].detect_rect.size();
+//	//	if( N_t > 0 && N_tp1> 0)
+//	//	{
+//	//		Mat mat_distance = Mat(N_t,N_tp1,CV_32FC1);
+//	//		Mat rlt;
+//	//		CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[T+1],_ratio_threhold,mat_distance,rlt);
+//
+//	//		//copy到对应的序列中
+//	//		mat_distance.copyTo(_distance[T-1]);
+//	//		rlt.copyTo(_b[T-1]);
+//
+//	//		cout<<"_distance["<<T<<"]="<<_distance[T]<<endl;
+//	//		cout<<"_b["<<T<<"]="<<_b[T]<<endl;
+//	//		for(int i=0;i<_detect_rect_squence[T].detect_rect.size();i++)
+//	//		{
+//	//			rectangle(m_frame,_detect_rect_squence[T].detect_rect[i],Scalar(255,0,0));
+//	//		}
+//
+//	//		for(int i=0;i<rlt.cols;i++)
+//	//		{
+//	//			int indx= rlt.at<float>(i);
+//	//			rectangle(m_frame,_detect_rect_squence[T+1].detect_rect[indx],Scalar(0,255,0));
+//	//		}
+//	//		imshow("m_frame",m_frame);
+//
+//	//	}
+//	//	//序列进行前移
+//	//	_distance.erase(_distance.begin());
+//	//	Mat temp_distance=Mat();
+//	//	_distance.push_back(temp_distance);
+//	//	_b.erase(_b.begin());
+//	//	N_tp1 = _detect_rect_squence[m_nHistoryLen-1].detect_rect.size();
+//	//	Mat tempmat=Mat(1,N_tp1,CV_32FC1);
+//	//	tempmat.setTo(-1);
+//	//	_b.push_back(tempmat);
+//	//}
+//	
+//	return 1;
+//}
+
 int CTracker::GetXYChain(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> &_b,int _frame,int _ind,Mat &_xy)
 {
 	int length= _b.size();
@@ -475,25 +650,15 @@ int CTracker::LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,ve
 	Mat xy=Mat();
 	vector<Mat> tempvector;
 
-	if(m_frame_num<95 && m_frame_num>90)
-	{
-		cout<<"**********************_b*************************"<<endl;
-	}
-
 	for (int i=0;i<_b.size();i++)
 	{
 		Mat temp_mat;
 		_b[i].copyTo(temp_mat);
 		tempvector.push_back(temp_mat);
-		if(m_frame_num<95 && m_frame_num>90)
-			cout<<temp_mat<<",";
+		//if(m_frame_num<95 && m_frame_num>71)
+		//	cout<<temp_mat<<",";
 	}
 	
-	if(m_frame_num<95 && m_frame_num>90)
-	{
-		cout<<endl;
-	}
-
 	for(int i=0;i<_b.size();i++)
 	{
 		if(tempvector[i].cols == 0 || tempvector[i].rows==0)
@@ -521,6 +686,15 @@ int CTracker::LinkDetectionTracklets(vector<DETECTRECT> &_detect_rect_squence,ve
 			}
 		}
 	}
+	//if(m_frame_num >=92 && m_frame_num <= 96)
+	//{
+	//	cout<<"**********xy_data**************"<<endl;
+	//	for(int i=0;i<_itl.size();i++)
+	//	{
+	//		cout<<_itl[i].xy_data<<endl;
+	//	}
+	//	cout<<"**********xy_data**************"<<endl;
+	//}
 
 	tempvector.clear();
 	return 1;
@@ -1116,53 +1290,145 @@ int CTracker::Compute_DetectionTracklets_Similarity(vector<I_TRACK_LINK> &_itl)
 int CTracker::LinkDetectionTracklets1(vector<DETECTRECT> &_detect_rect_squence,vector<Mat> _b,vector<Mat> _distance,vector<I_TRACK_LINK> &_itl)
 {
 	int b_length= _b.size();
-	if(b_length < 2)
+	int T =b_length-1;
+	int Tnp1=T-1;
+	if(b_length < 3)
 		return -1;
-	//当前T时刻
-	int T_b_cols = _b[b_length-1].cols;
-	int T_b_rows = _b[b_length-1].rows;
+	//当前T时刻,b_length-2
+	int T_b_cols = _b[T].cols;
+	int T_b_rows = _b[T].rows;
 
-	//T-1时刻
-	int Tnp1_b_cols = _b[b_length-2].cols;
-	int Tnp1_b_rows = _b[b_length-2].rows;
+	//T-1时刻,b_length-1
+	int Tnp1_b_cols = _b[Tnp1].cols;
+	int Tnp1_b_rows = _b[Tnp1].rows;
 	//没有跟踪目标
-	if(Tnp1_b_cols == 0 || Tnp1_b_rows==0)
+	if(T_b_cols == 0 || T_b_rows==0)
 		return -1;
-
+	
+	
 	//发现跟踪目标，查找与T-1时刻的关系
 	//T-1为空，新发现目标
-	for(int i=0;i<Tnp1_b_cols;i++)
+	for(int i=0;i<T_b_cols;i++)
 	{
-		if(_b[b_length-2].at<float>(0,i)>-1)
+		int object_id=0;
+		int ind=-1;
+		if(m_frame_num >=91)
+			int ll=0;
+		//上一时刻无跟踪目标
+	/*	if(Tnp1_b_cols ==0)
 		{
-			int ind = i;
-			if (ind >=0)
-			{
-				Mat tempXYt = Mat(7,1,CV_32FC1);
-				tempXYt.at<float>(0,0)=(float)_detect_rect_squence[b_length-2].detect_rect_center[ind].x;
-				tempXYt.at<float>(1,0)=(float)_detect_rect_squence[b_length-2].detect_rect_center[ind].y;
+			object_id = GetTickCount();
+			_detect_rect_squence[T].object_id[i]=object_id;
+			Mat tempXYt = Mat(7,1,CV_32FC1);
+			tempXYt.at<float>(0,0)=(float)_detect_rect_squence[T].detect_rect_center[i].x;
+			tempXYt.at<float>(1,0)=(float)_detect_rect_squence[T].detect_rect_center[i].y;
 
-				tempXYt.at<float>(2,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].x;
-				tempXYt.at<float>(3,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].x;
-				tempXYt.at<float>(4,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].width;
-				tempXYt.at<float>(5,0)=(float)_detect_rect_squence[b_length-2].detect_rect[ind].height;
-				tempXYt.at<float>(6,0)=(float)_detect_rect_squence[b_length-2].idx[ind];
-				if(ind >= _b[b_length-2].cols)
-					ind = 0;
-				int indnext =(int) _b[b_length-1].at<float>(0,ind);
-				_b[b_length-1].at<float>(0,ind) = -1;
-				ind = indnext;
-			}
+			tempXYt.at<float>(2,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+			tempXYt.at<float>(3,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+			tempXYt.at<float>(4,0)=(float)_detect_rect_squence[T].detect_rect[i].width;
+			tempXYt.at<float>(5,0)=(float)_detect_rect_squence[T].detect_rect[i].height;
+			tempXYt.at<float>(6,0)=(float)object_id;
+
+			Mat temp_xy_data=tempXYt.rowRange(0,2);
+			Mat temp_rect_data=tempXYt.rowRange(2,6);
+			Mat temp_rect_id = tempXYt.rowRange(6,7);
+			
 			I_TRACK_LINK new_itl;
-			new_itl.id = GetTickCount();
+			new_itl.id = object_id;
 			new_itl.t_start = _detect_rect_squence[b_length-2].frame_num;
 			new_itl.t_end = new_itl.t_start;
 			new_itl.length = 1;
-			
+			temp_xy_data.copyTo(new_itl.xy_data);
 			_itl.push_back(new_itl);
 		}
+		else
+		{*/
+			//匹配有无此跟踪目标
+		for(int j=0;j<Tnp1_b_cols;j++)
+		{
+			if(_b[Tnp1].at<float>(0,j) == i )
+			{
+				ind = j;
+			}
+		}
+		if(ind==-1)
+		{
+			object_id = GetTickCount();
+			_detect_rect_squence[T].object_id[i]=object_id;
+			Mat tempXYt = Mat(7,1,CV_32FC1);
+			tempXYt.at<float>(0,0)=(float)_detect_rect_squence[T].detect_rect_center[i].x;
+			tempXYt.at<float>(1,0)=(float)_detect_rect_squence[T].detect_rect_center[i].y;
+
+			tempXYt.at<float>(2,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+			tempXYt.at<float>(3,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+			tempXYt.at<float>(4,0)=(float)_detect_rect_squence[T].detect_rect[i].width;
+			tempXYt.at<float>(5,0)=(float)_detect_rect_squence[T].detect_rect[i].height;
+			tempXYt.at<float>(6,0)=(float)object_id;
+
+			Mat temp_xy_data=tempXYt.rowRange(0,2);
+			Mat temp_rect_data=tempXYt.rowRange(2,6);
+			Mat temp_rect_id = tempXYt.rowRange(6,7);
+
+			I_TRACK_LINK new_itl;
+			new_itl.id = object_id;
+			new_itl.t_start = _detect_rect_squence[T].frame_num;
+			new_itl.t_end = new_itl.t_start;
+			new_itl.length = 1;
+			temp_xy_data.copyTo(new_itl.xy_data);
+			_itl.push_back(new_itl);
+		}
+		else
+		{
+			if(_detect_rect_squence[Tnp1].detect_rect.size() >  _detect_rect_squence[T].detect_rect.size() )
+			{
+				Mat rect_distance;
+				Mat rlt;
+				CalRectDistance(_detect_rect_squence[T],_detect_rect_squence[Tnp1],m_ratio_threhold,rect_distance,rlt);
+				cout<<rlt<<endl;
+				cout<<rect_distance<<endl;
+				for(int k=0;k<rlt.cols;k++)
+				{
+					if(rlt.at<float>(0,k) == i )
+					{
+						ind = k;
+					}
+				}
+			}
+			else
+			{
+				object_id = _detect_rect_squence[Tnp1].object_id[ind];
+				_detect_rect_squence[T].object_id[i] = _detect_rect_squence[Tnp1].object_id[ind];
+				for(int j=0;j<_itl.size();j++)
+				{
+					if(object_id == _itl[j].id)
+					{
+						_itl[j].length ++;
+						_itl[j].t_end = _detect_rect_squence[T].frame_num;
+
+						Mat tempXYt = Mat(7,1,CV_32FC1);
+						tempXYt.at<float>(0,0)=(float)_detect_rect_squence[T].detect_rect_center[i].x;
+						tempXYt.at<float>(1,0)=(float)_detect_rect_squence[T].detect_rect_center[i].y;
+
+						tempXYt.at<float>(2,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+						tempXYt.at<float>(3,0)=(float)_detect_rect_squence[T].detect_rect[i].x;
+						tempXYt.at<float>(4,0)=(float)_detect_rect_squence[T].detect_rect[i].width;
+						tempXYt.at<float>(5,0)=(float)_detect_rect_squence[T].detect_rect[i].height;
+						tempXYt.at<float>(6,0)=(float)object_id;
+
+						Mat temp_xy_data=tempXYt.rowRange(0,2);
+						Mat temp_rect_data=tempXYt.rowRange(2,6);
+						Mat temp_rect_id = tempXYt.rowRange(6,7);
+
+						Mat temp_meger=Mat(2,_itl[j].length,CV_32FC1);
+						_itl[j].xy_data.copyTo(temp_meger.colRange(0,_itl[j].length-1));
+						temp_xy_data.copyTo(temp_meger.colRange(_itl[j].length-1,_itl[j].length));
+						temp_meger.copyTo(_itl[j].xy_data);
+
+					}
+				}
+			}
+		}
+	//	}
 	}
-
-
 	return 1;
 }
