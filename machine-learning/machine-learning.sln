@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "machine-learning", "machine-learning\machine-learning.vcxproj", "{B58529C4-22B9-4AD8-A147-AD4AD826B476}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DataGeneration", "DataGeneration\DataGeneration.vcxproj", "{FED0A058-0502-45EA-AA21-E6F51F3D0288}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B58529C4-22B9-4AD8-A147-AD4AD826B476}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B58529C4-22B9-4AD8-A147-AD4AD826B476}.Debug|Win32.Build.0 = Debug|Win32
+		{B58529C4-22B9-4AD8-A147-AD4AD826B476}.Release|Win32.ActiveCfg = Release|Win32
+		{B58529C4-22B9-4AD8-A147-AD4AD826B476}.Release|Win32.Build.0 = Release|Win32
+		{FED0A058-0502-45EA-AA21-E6F51F3D0288}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FED0A058-0502-45EA-AA21-E6F51F3D0288}.Debug|Win32.Build.0 = Debug|Win32
+		{FED0A058-0502-45EA-AA21-E6F51F3D0288}.Release|Win32.ActiveCfg = Release|Win32
+		{FED0A058-0502-45EA-AA21-E6F51F3D0288}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
