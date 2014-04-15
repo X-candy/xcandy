@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LEDFlash", "LEDFlash\LEDFlash.vcxproj", "{84F048C5-D168-4A9E-9175-9890C52E9799}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{8E6EBFA4-B7E6-41AB-B5EC-ACB8C3F5D10D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84F048C5-D168-4A9E-9175-9890C52E9799}.Debug|Win32.ActiveCfg = Debug|Win32
+		{84F048C5-D168-4A9E-9175-9890C52E9799}.Debug|Win32.Build.0 = Debug|Win32
+		{84F048C5-D168-4A9E-9175-9890C52E9799}.Release|Win32.ActiveCfg = Release|Win32
+		{84F048C5-D168-4A9E-9175-9890C52E9799}.Release|Win32.Build.0 = Release|Win32
+		{8E6EBFA4-B7E6-41AB-B5EC-ACB8C3F5D10D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8E6EBFA4-B7E6-41AB-B5EC-ACB8C3F5D10D}.Debug|Win32.Build.0 = Debug|Win32
+		{8E6EBFA4-B7E6-41AB-B5EC-ACB8C3F5D10D}.Release|Win32.ActiveCfg = Release|Win32
+		{8E6EBFA4-B7E6-41AB-B5EC-ACB8C3F5D10D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
