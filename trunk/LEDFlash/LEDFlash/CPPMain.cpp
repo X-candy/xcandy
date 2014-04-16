@@ -1,9 +1,12 @@
 #pragma once
+#include "DrawAOI.h"
+#include "LEDFlash.h"
 #include <iostream>
 #include <Windows.h>
 #include <time.h>
 #include <opencv2\opencv.hpp>
-#include "DrawAOI.h"
+
+
 using namespace cv;
 using namespace std;
 
@@ -50,7 +53,8 @@ int main(int argc,char** argv)
 	CDrawAOI AOI;
 	AOI(frame);
 
-
+	CLEDFlash dft1 ;
+	Mat temp;
 	while (1)
 	{
 		capture>>frame;
@@ -59,6 +63,7 @@ int main(int argc,char** argv)
 			break;
 		rectangle(frame,AOI.m_AOI,Scalar(255,0,0));
 		
+		dft1.DFTTransform(frame,temp);
 
 
 		imshow("frame",frame);
