@@ -144,9 +144,14 @@ void nonunique(Mat _a,Mat &_b)
 	DiffMat(sorted,db);
 
 	Mat d = Mat(1,cols*rows,CV_8U);
+	d.setTo(255);
 	Mat tempd= (db!=0);
 	int tempd_size=tempd.channels()*tempd.cols*tempd.step*tempd.elemSize();
-	memcpy(d.data,tempd.data,tempd_size);
+	for(int i=0;i<tempd.cols*tempd.rows;i++)
+	{
+		d.at<uchar>(i) = tempd.at<uchar>(i);
+	}
+	//memcpy(d.data,tempd.data,tempd_size);
 	d.at<uchar>(0,cols*rows-1)=255;
 	
 	int nNonZero=countNonZero(d);
@@ -314,12 +319,23 @@ int getxychain(vector<DETECTRECT> &_detect_rect,vector<Mat> &_b,int _frame,int _
 
 	while(_frame<length && _ind>=0)
 	{
+		if(tfirst ==129 && _ind ==5 )
+			cout<<"_frame="<<_frame<<endl;
+
+		if(_frame==339)
+			int kkklkl=0;
 		Mat tempXYt=xy.colRange(_frame,_frame+1);
-		tempXYt.at<float>(0,0)=_detect_rect[_frame].detect_rect[_ind].center_point[0];
-		tempXYt.at<float>(1,0)=_detect_rect[_frame].detect_rect[_ind].center_point[1];
-		int indnext =(int) _b[_frame].at<float>(0,_ind);
-		_b[_frame].at<float>(0,_ind) = -2;
-		_ind = indnext;
+		if(_detect_rect[_frame].detect_rect.size()!=0 && _ind<_detect_rect[_frame].detect_rect.size())
+		{
+			tempXYt.at<float>(0,0)=_detect_rect[_frame].detect_rect[_ind].center_point[0];
+			tempXYt.at<float>(1,0)=_detect_rect[_frame].detect_rect[_ind].center_point[1];
+			//出错原因，矩阵超限值，公式不应该出错的，暂未保护
+			double indnext = _b[_frame].at<float>(0,_ind);
+			_b[_frame].at<float>(0,_ind) = -2;
+			_ind = indnext;
+		}
+		
+		
 		_frame++;
 	}
 	_xy = xy.colRange(tfirst,_frame);
@@ -336,10 +352,15 @@ int linkDetectionTracklets(vector<DETECTRECT> &_detect_rect,vector<Mat> _b,vecto
 	int rows;
 	Mat xy=Mat();
 	for(int i=0;i<length;i++)
-	{
+	{	
+		cout<<"i="<<i<<endl;
+		
 		cols =_b[i].cols;
 		for(int k=0;k<cols;k++)
 		{
+			cout<<"k="<<k<<endl;
+			if(i==129 && k==5)
+				int kkkklkds=0;
 			if(_b[i].at<float>(0,k)>-2)
 			{
 				getxychain(_detect_rect,_b,i,k,xy);
@@ -460,6 +481,9 @@ int l2_fastalm_mo(I_TRACK_LINK _itl,RESULTS _p)
 		_p.nc = nc;
 	else
 		nc =  _p.nc;
+
+	//to be continue
+	//next assignment
 
 	return 1;
 }
@@ -584,9 +608,7 @@ int smot_rank_admm(I_TRACK_LINK _itl,int _eta,RESULTS _p)
 			nCount_zero_omega++;
 	}
 
-	//if( nCount_zero_omega > 0)
-	//	l2_fastalm_mo(_itl,Lambda);
-	Mat matH=Mat();
+		l2_fastalm_mo(_itl,Lambda);	Mat matH=Mat();
 	Mat matD=Mat();
 	cout<<"++++++++++++++++++++++"<<endl;
 	cout<<_itl.xy_data<<endl;
@@ -879,10 +901,11 @@ int associate_itl(vector<I_TRACK_LINK> _itl,int _t_start,int _t_end)
 		while(dN>0)
 		{
 			compute_itl_similarity_matrix(itlh,params);
-			Nnew = itlh.size();
+<<<<<<< .mine			dN--;
+=======			Nnew = itlh.size();
 			dN = N - Nnew;
 			N = Nnew;
-		}
+>>>>>>> .theirs		}
 
 		
 	}
