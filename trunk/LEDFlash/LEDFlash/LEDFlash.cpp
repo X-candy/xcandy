@@ -77,14 +77,35 @@ int CLEDFlash::DFTTransform(Mat _img,Mat &_mag)
 	return 1;
 }
 
+
+void CLEDFlash::gernerationFilter(int _M,int _N, int _ntype=FILTER_LOW_GLPF)
+{
+	/*Mat U= Mat::zeros(Size(_M,_N),CV_32FC1);
+	Mat V= Mat::zeros(Size(_M,_N),CV_32FC1);*/
+
+	char buffer[1024]={1,2,3,4,5,6,7,8,9,10};
+	Mat U=Mat(buffer,CV_32FC1);
+	cout<<U<<endl;
+	Mat temp;
+	repeat(U,10,temp);
+	cout<<temp<<endl;
+}
+
+int CLEDFlash::low_and_high_pass_filters(Mat _img,Mat &_rlt,int _ntype=FILTER_LOW_GLPF)
+{
+
+}
+
 int CLEDFlash::convolveDFT(Mat _A, Mat _B, Mat &_C)
 {
-	/*if(_A.channels()!=1)
-		cvtColor(_A,_A,CV_RGB2GRAY);
+	if(_A.depth() != CV_32F)
+		_A.convertTo(_A,CV_32F);
 
-	if(_B.channels()!=1)
-		cvtColor(_B,_B,CV_RGB2GRAY);*/
+	CV_Assert(_A.channels()==1);
 
+	if(_B.depth() != CV_32F)
+		_B.convertTo(_B,CV_32F);
+	CV_Assert(_B.channels()==1);
 	// reallocate the output array if needed
 	_C.create(abs(_A.rows - _B.rows)+1, abs(_A.cols - _B.cols)+1, _A.type());
 	Size dftSize;

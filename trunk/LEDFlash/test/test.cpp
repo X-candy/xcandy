@@ -52,7 +52,12 @@ const char *keys =
 
 void convolveDFT(Mat A, Mat B, Mat C)
 {
+	if(A.depth() != CV_32F)
+		A.convertTo(A,CV_32F);
 	
+
+	if(B.depth() != CV_32F)
+		B.convertTo(B,CV_32F);
 	// reallocate the output array if needed
 	C.create(abs(A.rows - B.rows)+1, abs(A.cols - B.cols)+1, A.type());
 	Size dftSize;
@@ -94,6 +99,13 @@ void convolveDFT(Mat A, Mat B, Mat C)
 
 int main(int argc, const char **argv)
 {
+	//char buffer[1024]={1,2,3,4,5,6,7,8,9,10};
+	//Mat U=Mat(buffer,CV_32FC1);
+	//cout<<U<<endl;
+	//Mat temp;
+	//repeat(U,10,temp);
+	//cout<<temp<<endl;
+
 	help();                                                                                                                                                                                                                                     
 	CommandLineParser parser(argc, argv, keys);
 	string filename = parser.get<string>("1");
